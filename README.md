@@ -1,22 +1,35 @@
-# FarmSetu Python MVP
+# Farmer Market Platform
 
-Python implementation of the integrated farmer support and market access dashboard.
+A Vite + React + TypeScript application for farmer support, crop selling, scheme discovery, market intelligence, and admin management.
 
 ## Features
 
 - Farmer registration and profile management
-- Scheme and subsidy recommendations
-- Loan readiness scoring and checklist guidance
-- Direct produce listing for buyer discovery
-- Market price intelligence dashboard
+- Schemes and loan information with direct external application links
+- Market access for crop listings and buyer contact flows
+- Live market price and intelligence dashboard
+- Bill generation and PDF download
+- Admin login and protected admin panel
+- Multilingual interface support
 
-## Run
+## Tech Stack
+
+- React
+- TypeScript
+- Vite
+- Express
+
+## Run Locally
 
 ```bash
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-python app.py
+npm install
+npm run dev
 ```
 
-Then open `http://127.0.0.1:5000`.
+Then open `http://localhost:5173`.
+
+## Build
+
+```bash
+npm run build
+```
