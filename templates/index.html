@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FarmSetu | Farmer Workspace</title>
+    <meta
+      name="description"
+      content="Farmer workspace for profile management, scheme guidance, loan readiness and market access."
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
+  </head>
+  <body class="farmer-body">
+    <div class="farmer-shell">
+      <header class="farmer-topbar">
+        <a class="brand brand-lockup" href="{{ url_for('home') }}">
+          <span class="brand-mark">FS</span>
+          <span>FarmSetu</span>
+        </a>
+        <div class="farmer-top-actions">
+          <span class="workspace-chip">Farmer Workspace</span>
+          <a class="button-link secondary-link" href="{{ url_for('home') }}">Back Home</a>
+        </div>
+      </header>
+
+      <section class="farmer-hero">
+        <div class="farmer-hero-main">
+          <p class="eyebrow">Welcome Back</p>
+          <h1>{{ profile.name }}, your farm decisions are organized in one place.</h1>
+          <p class="hero-text">
+            Manage your verified profile, discover the best matching schemes,
+            check loan readiness, and list produce directly for buyers without
+            switching between fragmented services.
+          </p>
+
+          <div class="farmer-highlight-grid">
+            <article class="farmer-highlight">
+              <span>Primary Crop</span>
+              <strong>{{ profile.crop }}</strong>
+              <small>{{ profile.district }}, {{ profile.state }}</small>
+            </article>
+            <article class="farmer-highlight">
+              <span>Land Holding</span>
+              <strong>{{ profile.land_acres }} acres</strong>
+              <small>{{ profile.irrigation }} irrigation</small>
+            </article>
+            <article class="farmer-highlight">
+              <span>Top Market Signal</span>
+              <strong>Rs {{ format_inr(top_signal.today) }}</strong>
+              <small>{{ top_signal.crop }} at {{ top_signal.mandi }}</small>
+            </article>
+          </div>
+        </div>
+
+        <aside class="farmer-hero-side">
+          <article class="focus-card">
+            <p class="eyebrow">Today&apos;s Focus</p>
+            <h2>{{ top_signal.crop }} has the strongest buyer movement.</h2>
+            <p>{{ top_signal.alert }}</p>
+            <div class="focus-meta">
+              <div>
+                <span>Mandi</span>
+                <strong>{{ top_signal.mandi }}</strong>
+              </div>
+              <div>
+                <span>Trend</span>
+                <strong>{{ top_signal.weekly_trend }}</strong>
+              </div>
+              <div>
+                <span>Demand</span>
+                <strong>{{ top_signal.demand_index }}/100</strong>
+              </div>
+            </div>
+          </article>
+        </aside>
+      </section>
+
+      <section class="farmer-metrics">
+        <article class="metric-panel">
+          <span class="metric-bar metric-schemes"></span>
+          <p>Eligible schemes</p>
+          <strong>{{ stats.schemes }}</strong>
+        </article>
+        <article class="metric-panel">
+          <span class="metric-bar metric-loan"></span>
+          <p>Loan readiness</p>
+          <strong>{{ stats.loan_score }}%</strong>
+        </article>
+        <article class="metric-panel">
+          <span class="metric-bar metric-price"></span>
+          <p>Expected crop price</p>
+          <strong>Rs {{ stats.crop_price }}</strong>
+        </article>
+        <article class="metric-panel">
+          <span class="metric-bar metric-buyers"></span>
+          <p>Active buyer listings</p>
+          <strong>{{ stats.buyers }}</strong>
+        </article>
+      </section>
+
+      <main class="farmer-layout">
+        <section class="farmer-column farmer-column-wide">
+          <article class="workspace-card">
+            <div class="workspace-head">
+              <div>
+                <p class="eyebrow">Profile Center</p>
+                <h2>Fill your farmer details first</h2>
+              </div>
+              <span class="status-chip">
+                {% if profile.aadhaar_linked %}Verified via Aadhaar{% else %}Verification pending{% endif %}
+              </span>
+            </div>
+
+            <p class="workspace-note">
+              Add crop, land acres, irrigation, income, and identity details. After you save this form,
+              FarmSetu will show the loan options that match your profile.
+            </p>
+
+            <form action="{{ url_for('update_profile') }}" method="post">
+              <div class="farmer-form-grid">
+                <label>
+                  Farmer name
+                  <input name="name" value="{{ profile.name }}" />
+                </label>
+                <label>
+                  District
+                  <input name="district" value="{{ profile.district }}" />
+                </label>
+                <label>
+                  State
+                  <input name="state" value="{{ profile.state }}" />
+                </label>
+                <label>
+                  Preferred language
+                  <select name="language">
+                    {% for lang in ["Marathi", "Hindi", "English", "Kannada"] %}
+                    <option value="{{ lang }}" {% if profile.language == lang %}selected{% endif %}>{{ lang }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <label>
+                  Land holding (acres)
+                  <input type="number" step="0.1" name="land_acres" value="{{ profile.land_acres }}" />
+                </label>
+                <label>
+                  Primary crop
+                  <input name="crop" value="{{ profile.crop }}" />
+                </label>
+                <label>
+                  Irrigation
+                  <select name="irrigation">
+                    {% for irrigation in ["Canal", "Rain-fed", "Drip", "Borewell"] %}
+                    <option value="{{ irrigation }}" {% if profile.irrigation == irrigation %}selected{% endif %}>{{ irrigation }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <label>
+                  Annual income (Rs)
+                  <input type="number" name="annual_income" value="{{ profile.annual_income }}" />
+                </label>
+              </div>
+
+              <div class="farmer-toggle-grid">
+                <label><input type="checkbox" name="aadhaar_linked" {% if profile.aadhaar_linked %}checked{% endif %} /> Aadhaar linked</label>
+                <label><input type="checkbox" name="soil_health_card" {% if profile.soil_health_card %}checked{% endif %} /> Soil health card</label>
+                <label><input type="checkbox" name="has_kcc" {% if profile.has_kcc %}checked{% endif %} /> Existing KCC</label>
+                <label><input type="checkbox" name="organic" {% if profile.organic %}checked{% endif %} /> Organic cultivation</label>
+              </div>
+
+              <div class="actions">
+                <button type="submit">Save farmer profile</button>
+              </div>
+            </form>
+          </article>
+
+          <article class="workspace-card">
+            <div class="workspace-head">
+              <div>
+                <p class="eyebrow">Market Access</p>
+                <h2>Publish produce for direct buyer attention</h2>
+              </div>
+            </div>
+
+            <form class="farmer-market-form" action="{{ url_for('publish_listing') }}" method="post">
+              <label>
+                Crop
+                <input value="{{ profile.crop }}" disabled />
+              </label>
+              <label>
+                Quantity
+                <input name="quantity" value="50 quintals" />
+              </label>
+              <label>
+                Asking price (Rs/quintal)
+                <input name="asking_price" type="number" value="{{ top_signal.today }}" />
+              </label>
+              <button type="submit">Publish listing</button>
+            </form>
+
+            <div class="listing-grid">
+              {% for listing in market_feed %}
+              <article class="listing-card">
+                <div class="listing-top">
+                  <h3>{{ listing.crop }}</h3>
+                  <span class="demand {{ listing.demand|lower }}">{{ listing.demand }} demand</span>
+                </div>
+                <p>{{ listing.quantity }}</p>
+                <strong>Rs {{ format_inr(listing.price) }}/quintal</strong>
+                <p>{{ listing.location }}</p>
+                <small>{{ listing.buyer }}</small>
+              </article>
+              {% endfor %}
+            </div>
+          </article>
+        </section>
+
+        <section class="farmer-column">
+          <article class="workspace-card">
+            <div class="workspace-head">
+              <div>
+                <p class="eyebrow">Schemes & Loans</p>
+                <h2>Support unlocked from your saved profile</h2>
+              </div>
+              <span class="score-chip">Loan readiness {{ loan_score }}%</span>
+            </div>
+
+            <div class="scheme-stack">
+              {% for scheme in matched_schemes %}
+              <article class="scheme-card">
+                <span class="tag">{{ scheme.tag }}</span>
+                <h3>{{ scheme.name }}</h3>
+                <p>{{ scheme.benefit }}</p>
+                <small>{{ scheme.next_step }}</small>
+              </article>
+              {% endfor %}
+            </div>
+
+            <article class="loan-panel">
+              <h3>Matched loan options</h3>
+              {% if profile_complete and matched_loans %}
+              <div class="loan-option-stack">
+                {% for loan in matched_loans %}
+                <article class="loan-option-card">
+                  <span class="tag">Loan Match</span>
+                  <h4>{{ loan.name }}</h4>
+                  <strong>{{ loan.amount }}</strong>
+                  <p>{{ loan.purpose }}</p>
+                  <small>{{ loan.eligibility_hint }}</small>
+                  <div class="loan-next-step">{{ loan.next_step }}</div>
+                </article>
+                {% endfor %}
+              </div>
+              {% else %}
+              <p class="loan-empty">
+                Save the farmer profile with crop, land acres, irrigation, district, state, and annual income to view matching loan options.
+              </p>
+              {% endif %}
+
+              <h3>Loan assistance checklist</h3>
+              <ul>
+                <li>{% if profile.aadhaar_linked %}Aadhaar verified{% else %}Link Aadhaar to unlock digital verification{% endif %}</li>
+                <li>{% if profile.soil_health_card %}Soil health card available{% else %}Add soil health details for better crop planning confidence{% endif %}</li>
+                <li>{% if profile.has_kcc %}Existing KCC can support top-up credit{% else %}New KCC recommended for seasonal working capital{% endif %}</li>
+              </ul>
+            </article>
+          </article>
+
+          <article class="workspace-card">
+            <div class="workspace-head">
+              <div>
+                <p class="eyebrow">Price Intelligence</p>
+                <h2>Compare mandi movement before selling</h2>
+              </div>
+            </div>
+
+            <div class="farmer-price-stack">
+              {% for signal in price_signals %}
+              <article class="price-signal-card">
+                <div class="price-signal-top">
+                  <div>
+                    <strong>{{ signal.crop }}</strong>
+                    <p>{{ signal.mandi }}</p>
+                  </div>
+                  <span class="signal-demand">{{ signal.demand_index }}/100</span>
+                </div>
+                <h3>Rs {{ format_inr(signal.today) }}</h3>
+                <p>{{ signal.alert }}</p>
+                <small>{{ signal.weekly_trend }} this week</small>
+              </article>
+              {% endfor %}
+            </div>
+          </article>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

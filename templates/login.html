@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FarmSetu | {{ role }} Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body>
+    <div class="auth-shell">
+      <div class="auth-panel">
+        <a class="back-link" href="{{ url_for('home') }}">Back to home</a>
+        <p class="eyebrow">{{ role }} Access</p>
+        <h1>{{ role }} Login</h1>
+        <p class="hero-text">
+          This demo login takes you into the {{ role.lower() }} experience for the hackathon MVP.
+        </p>
+
+        <form class="auth-form" method="post" action="{{ action }}">
+          <label>
+            Mobile number / Email
+            <input name="identifier" placeholder="Enter your mobile or email" required />
+          </label>
+          <label>
+            Password / OTP
+            <input name="password" type="password" placeholder="Enter password or OTP" required />
+          </label>
+          <button type="submit">Login as {{ role }}</button>
+        </form>
+
+        <p class="auth-switch">
+          New here?
+          <a href="{{ alt_href }}">{{ alt_label }}</a>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

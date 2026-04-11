@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FarmSetu | Buyer Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <div class="dashboard-header">
+        <div>
+          <p class="eyebrow">Buyer Workspace</p>
+          <h1 class="dashboard-title">Source produce directly from verified farm listings.</h1>
+        </div>
+        <a class="button-link secondary-link" href="{{ url_for('home') }}">Home</a>
+      </div>
+
+      <section class="hero buyer-hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Market Snapshot</p>
+          <h2>Best current sourcing signal: {{ top_signal.crop }}</h2>
+          <p class="hero-text">
+            {{ top_signal.alert }} Current mandi price is Rs {{ format_inr(top_signal.today) }}/quintal at {{ top_signal.mandi }}.
+          </p>
+        </div>
+        <section class="hero-panel">
+          <h2>Available direct listings</h2>
+          <strong>{{ market_feed|length }}</strong>
+          <p>Buyer-facing listings ready for negotiation and procurement.</p>
+        </section>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Live Listings</p>
+            <h2>Open produce supply from farmers</h2>
+          </div>
+        </div>
+        <div class="listing-grid">
+          {% for listing in market_feed %}
+          <article class="listing-card">
+            <div class="listing-top">
+              <h3>{{ listing.crop }}</h3>
+              <span class="demand {{ listing.demand|lower }}">{{ listing.demand }} demand</span>
+            </div>
+            <p>{{ listing.quantity }}</p>
+            <strong>Rs {{ format_inr(listing.price) }}/quintal</strong>
+            <p>{{ listing.location }}</p>
+            <small>{{ listing.buyer }}</small>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Price Intelligence</p>
+            <h2>Compare mandi signals before procurement</h2>
+          </div>
+        </div>
+        <div class="price-table">
+          {% for signal in price_signals %}
+          <article class="price-row">
+            <div>
+              <strong>{{ signal.crop }}</strong>
+              <p>{{ signal.mandi }}</p>
+            </div>
+            <div>
+              <strong>Rs {{ format_inr(signal.today) }}</strong>
+              <p>Current price</p>
+            </div>
+            <div>
+              <strong>{{ signal.weekly_trend }}</strong>
+              <p>Weekly move</p>
+            </div>
+            <div>
+              <strong>{{ signal.demand_index }}/100</strong>
+              <p>Demand index</p>
+            </div>
+            <div class="alert-box">{{ signal.alert }}</div>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+node_modules/
+dist/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+Thumbs.db
+.env
+.env.*
+coverage/
+*.log
+tsconfig.app.tsbuildinfo

@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FarmSetu | Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body class="landing-body">
+    <div class="landing-noise"></div>
+    <div class="landing-orb orb-one"></div>
+    <div class="landing-orb orb-two"></div>
+
+    <div class="landing-shell">
+      <header class="landing-header reveal">
+        <nav class="topbar landing-topbar">
+          <a class="brand brand-lockup" href="{{ url_for('home') }}">
+            <span class="brand-mark">FS</span>
+            <span>FarmSetu</span>
+          </a>
+          <div class="nav-links">
+            <a class="nav-link" href="#features">Features</a>
+            <a class="nav-link" href="#roles">Roles</a>
+            <a class="nav-link" href="#market">Market Pulse</a>
+            <a class="access-link buyer-access" href="{{ url_for('buyer_login') }}">
+              <span class="access-icon">B</span>
+              <span class="access-copy">
+                <strong>Buyer Access</strong>
+                <small>Login or sign up</small>
+              </span>
+            </a>
+            <a class="access-link farmer-access" href="{{ url_for('farmer_login') }}">
+              <span class="access-icon">F</span>
+              <span class="access-copy">
+                <strong>Farmer Access</strong>
+                <small>Login or sign up</small>
+              </span>
+            </a>
+          </div>
+        </nav>
+
+        <section class="landing-hero-grid">
+          <div class="landing-copy reveal" data-delay="0.05">
+            <p class="eyebrow">Integrated Farmer Support Ecosystem</p>
+            <h1>Grower intelligence, buyer access, and scheme support in one living platform.</h1>
+            <p class="hero-text landing-text">
+              FarmSetu brings together farmer onboarding, subsidy discovery, loan
+              guidance, direct produce selling, and buyer-side sourcing visibility.
+              It is designed to feel simple on the surface and powerful underneath.
+            </p>
+            <div class="access-grid">
+              <a class="entry-card farmer-entry" href="{{ url_for('farmer_login') }}">
+                <span class="entry-badge">F</span>
+                <span class="entry-text">
+                  <strong>Farmer Access</strong>
+                  <small>One entry for login and signup</small>
+                </span>
+              </a>
+              <a class="entry-card buyer-entry" href="{{ url_for('buyer_login') }}">
+                <span class="entry-badge">B</span>
+                <span class="entry-text">
+                  <strong>Buyer Access</strong>
+                  <small>One entry for login and signup</small>
+                </span>
+              </a>
+            </div>
+
+            <div class="impact-row">
+              <article class="impact-card reveal" data-delay="0.12">
+                <strong>01</strong>
+                <span>Verified farmer onboarding</span>
+              </article>
+              <article class="impact-card reveal" data-delay="0.18">
+                <strong>02</strong>
+                <span>Real-time market visibility</span>
+              </article>
+              <article class="impact-card reveal" data-delay="0.24">
+                <strong>03</strong>
+                <span>Direct buyer-farmer access</span>
+              </article>
+            </div>
+          </div>
+
+          <div class="hero-stage reveal" data-delay="0.1">
+            <div class="pulse-card tilt-card">
+              <div class="pulse-card-header">
+                <span class="live-dot"></span>
+                <span>Live rural intelligence</span>
+              </div>
+              <h2>Market pulse is strongest where decisions move fastest.</h2>
+              <div class="signal-board">
+                <article>
+                  <p>Onion demand</p>
+                  <strong>87/100</strong>
+                  <span>Festival demand climbing</span>
+                </article>
+                <article>
+                  <p>Loans matched</p>
+                  <strong>04</strong>
+                  <span>Guided from profile data</span>
+                </article>
+                <article>
+                  <p>Farmer reach</p>
+                  <strong>Multi-lingual</strong>
+                  <span>Voice-first assistance ready</span>
+                </article>
+              </div>
+            </div>
+
+            <div class="floating-stat reveal" data-delay="0.28">
+              <span>Commission-free</span>
+              <strong>Direct market access</strong>
+            </div>
+          </div>
+        </section>
+      </header>
+
+      <section class="metrics-strip reveal">
+        <article>
+          <span class="metric-label">Scheme Discovery</span>
+          <strong data-counter="28">0</strong>
+          <p>eligibility signals mapped into a single workflow</p>
+        </article>
+        <article>
+          <span class="metric-label">Buyer Activity</span>
+          <strong data-counter="120">0</strong>
+          <p>demo sourcing inquiries handled through direct listings</p>
+        </article>
+        <article>
+          <span class="metric-label">Farmer Simplicity</span>
+          <strong data-counter="5">0</strong>
+          <p>core tasks available from one easy dashboard</p>
+        </article>
+      </section>
+
+      <section class="feature-section" id="features">
+        <div class="section-intro reveal">
+          <p class="eyebrow">Platform Capability</p>
+          <h2>Built as a connected journey, not a pile of disconnected agri tools.</h2>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-panel reveal" data-delay="0.05">
+            <span class="feature-kicker">Profile Layer</span>
+            <h3>Verified farmer identity and land context</h3>
+            <p>One farmer profile stores crop, land, irrigation, and financial readiness so recommendations stay personalized.</p>
+          </article>
+          <article class="feature-panel reveal" data-delay="0.1">
+            <span class="feature-kicker">Advisory Layer</span>
+            <h3>Schemes, insurance, and loan guidance</h3>
+            <p>Eligibility logic becomes usable guidance with next steps, document cues, and simple support prompts.</p>
+          </article>
+          <article class="feature-panel reveal" data-delay="0.15">
+            <span class="feature-kicker">Commerce Layer</span>
+            <h3>Buyer access without middlemen</h3>
+            <p>Farmers publish produce directly and buyers discover supply with pricing clarity and demand signals.</p>
+          </article>
+          <article class="feature-panel reveal" data-delay="0.2">
+            <span class="feature-kicker">Intelligence Layer</span>
+            <h3>Market movement that drives better timing</h3>
+            <p>Price dashboards, mandi comparisons, and alerts make it easier to avoid distress selling and reactive sourcing.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="role-showcase" id="roles">
+        <article class="role-spotlight farmer-spot reveal">
+          <div>
+            <p class="eyebrow">Farmer Journey</p>
+            <h2>From registration to selling, the flow stays clear.</h2>
+            <ul>
+              <li>Create one verified profile</li>
+              <li>Check schemes, subsidy paths, and loan readiness</li>
+              <li>Publish produce and monitor demand signals</li>
+            </ul>
+          </div>
+          <a class="entry-card farmer-entry compact-entry" href="{{ url_for('farmer_login') }}">
+            <span class="entry-badge">F</span>
+            <span class="entry-text">
+              <strong>Farmer Access</strong>
+              <small>Login and signup in one place</small>
+            </span>
+          </a>
+        </article>
+
+        <article class="role-spotlight buyer-spot reveal" data-delay="0.08">
+          <div>
+            <p class="eyebrow">Buyer Journey</p>
+            <h2>Procure directly with live listing and price visibility.</h2>
+            <ul>
+              <li>Browse open produce listings</li>
+              <li>Track mandi prices and demand intensity</li>
+              <li>Source with more transparency and less friction</li>
+            </ul>
+          </div>
+          <a class="entry-card buyer-entry compact-entry" href="{{ url_for('buyer_login') }}">
+            <span class="entry-badge">B</span>
+            <span class="entry-text">
+              <strong>Buyer Access</strong>
+              <small>Login and signup in one place</small>
+            </span>
+          </a>
+        </article>
+      </section>
+
+      <section class="market-section reveal" id="market">
+        <div class="market-copy">
+          <p class="eyebrow">Market Pulse</p>
+          <h2>When farmers see price movement earlier, they negotiate better.</h2>
+          <p class="hero-text">
+            The platform is designed to combine mandi trends, buyer demand, and
+            direct listings so timing becomes a strategic advantage instead of a guess.
+          </p>
+        </div>
+        <div class="market-cards">
+          <article class="market-card tilt-card">
+            <span class="mini-label">Demand Signal</span>
+            <strong>Onion demand surging</strong>
+            <p>Buyer activity is concentrated around high-turnover crops ahead of seasonal spikes.</p>
+          </article>
+          <article class="market-card tilt-card">
+            <span class="mini-label">Farmer Outcome</span>
+            <strong>Fewer intermediaries, better visibility</strong>
+            <p>Digital verification and listing tools reduce dependency on fragmented offline support.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="closing-banner reveal">
+        <div>
+          <p class="eyebrow">Launch The Experience</p>
+          <h2>Choose your side of the platform and step into the product.</h2>
+        </div>
+        <div class="access-grid closing-access">
+          <a class="entry-card farmer-entry compact-entry" href="{{ url_for('farmer_login') }}">
+            <span class="entry-badge">F</span>
+            <span class="entry-text">
+              <strong>Farmer Access</strong>
+              <small>Login or sign up</small>
+            </span>
+          </a>
+          <a class="entry-card buyer-entry compact-entry" href="{{ url_for('buyer_login') }}">
+            <span class="entry-badge">B</span>
+            <span class="entry-text">
+              <strong>Buyer Access</strong>
+              <small>Login or sign up</small>
+            </span>
+          </a>
+        </div>
+      </section>
+    </div>
+
+    <script src="{{ url_for('static', filename='landing.js') }}"></script>
+  </body>
+</html>

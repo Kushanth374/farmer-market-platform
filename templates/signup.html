@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FarmSetu | {{ role }} Sign Up</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body>
+    <div class="auth-shell">
+      <div class="auth-panel">
+        <a class="back-link" href="{{ url_for('home') }}">Back to home</a>
+        <p class="eyebrow">{{ role }} Onboarding</p>
+        <h1>{{ role }} Sign Up</h1>
+        <p class="hero-text">
+          Create a {{ role.lower() }} account to access the FarmSetu demo experience.
+        </p>
+
+        <form class="auth-form" method="post" action="{{ action }}">
+          <label>
+            Full name / Organization
+            <input name="name" placeholder="Enter your name or organization" required />
+          </label>
+          <label>
+            Mobile number
+            <input name="phone" placeholder="Enter mobile number" required />
+          </label>
+          <label>
+            Email
+            <input name="email" type="email" placeholder="Enter email address" required />
+          </label>
+          <label>
+            Password
+            <input name="password" type="password" placeholder="Create password" required />
+          </label>
+          <button type="submit">Create {{ role }} Account</button>
+        </form>
+
+        <p class="auth-switch">
+          {{ alt_label }}
+          <a href="{{ alt_href }}">{{ alt_link_text }}</a>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
