@@ -13,7 +13,7 @@ export function resolveApiUrl(input: RequestInfo): RequestInfo {
   const isBackendOrigin = port === '3001';
   const isViteDevServer = /^517\d$/.test(port);
   const isPreviewServer = /^417\d$/.test(port);
-  const shouldUseDirectBackend = isViteDevServer || isPreviewServer || port === '';
+  const shouldUseDirectBackend = isViteDevServer || isPreviewServer;
 
   if (isBackendOrigin) {
     return `${protocol}//${hostname}:3001${input}`;
