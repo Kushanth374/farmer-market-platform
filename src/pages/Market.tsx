@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ShoppingBag, Star, TrendingUp, Tags, Receipt } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { useTranslations } from '../i18n';
@@ -48,7 +48,7 @@ const MarketCardImage: React.FC<{ crop: string; image?: string; height: string }
 };
 
 export const Market: React.FC = () => {
-  const { addToast, addMarketListing, marketListings, user, isMarketLive } = useAppContext();
+  const { addToast, addMarketListing, marketListings, user, isMarketLive, refreshMarketListings } = useAppContext();
   const { t } = useTranslations();
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
   const [newListing, setNewListing] = useState({ 
@@ -59,6 +59,10 @@ export const Market: React.FC = () => {
   });
   const [selectedForBill, setSelectedForBill] = useState<any>(null);
   const myListings = user ? marketListings.filter((item) => item.ownerPhone === user.phone) : [];
+
+  useEffect(() => {
+    void refreshMarketListings();
+  }, []);
 
   const toPhoneDigits = (phone: string) => phone.replace(/\D/g, '');
 

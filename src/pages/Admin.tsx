@@ -59,9 +59,13 @@ export const Admin: React.FC = () => {
     });
   };
 
-  const saveAccount = () => {
+  const saveAccount = async () => {
     if (!editingPhone || !accountDraft) return;
-    updateAccount(editingPhone, accountDraft);
+    const success = await updateAccount(editingPhone, accountDraft);
+    if (!success) {
+      addToast('Failed to update account', 'error');
+      return;
+    }
     addToast(t('admin.toastAccountUpdated'), 'success');
     setEditingPhone(null);
     setAccountDraft(null);
@@ -113,8 +117,8 @@ export const Admin: React.FC = () => {
           <button
             className="btn btn-secondary w-full"
             type="button"
-            onClick={() => {
-              resetMarketListings();
+            onClick={async () => {
+              await resetMarketListings();
               addToast(t('admin.toastListingsReset'), 'info');
             }}
           >
@@ -217,9 +221,13 @@ export const Admin: React.FC = () => {
                         <button
                           className="btn btn-secondary"
                           type="button"
-                          onClick={() => {
+                          onClick={async () => {
                             if (!window.confirm(t('admin.confirmDeleteAccount', { name: account.name }))) return;
-                            removeAccount(account.phone);
+                            const success = await removeAccount(account.phone);
+                            if (!success) {
+                              addToast('Failed to remove account', 'error');
+                              return;
+                            }
                             addToast(t('admin.toastAccountRemoved'), 'warning');
                             if (editingPhone === account.phone) {
                               setEditingPhone(null);

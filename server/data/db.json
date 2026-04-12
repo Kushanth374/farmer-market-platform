@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "accounts": {
+    "9999999999": {
+      "name": "Test User",
+      "phone": "9999999999",
+      "address": "Test Address",
+      "password": "secret",
+      "landSize": "2",
+      "primaryCrop": "Wheat"
+    },
+    "9449289304": {
+      "name": "Kushanth Gowda",
+      "phone": "9449289304",
+      "address": "Sullia",
+      "password": "k123",
+      "landSize": "3.6",
+      "primaryCrop": "Soybean"
+    },
+    "9164174778": {
+      "name": "Jnanesh",
+      "phone": "9164174778",
+      "address": "Puttur",
+      "password": "j123",
+      "landSize": "3",
+      "primaryCrop": "Sugarcane"
+    }
+  },
+  "farmers": {},
+  "buyers": {},
+  "marketListings": [
+    {
+      "id": 1775991492141,
+      "crop": "Wheat",
+      "qty": "5",
+      "price": "Rs 111/qtl",
+      "details": "",
+      "farmer": "Kushanth Gowda",
+      "ownerPhone": "9449289304",
+      "address": "Sullia",
+      "rating": 5,
+      "image": "https://images.pexels.com/photos/9456236/pexels-photo-9456236.jpeg?auto=compress&cs=tinysrgb&w=1200"
+    },
+    {
+      "id": 1,
+      "crop": "Wheat",
+      "qty": "50 Quintals",
+      "price": "Rs 2,200/qtl",
+      "details": "Clean grain and ready for dispatch.",
+      "farmer": "Rajesh Kumar",
+      "ownerPhone": "919876543210",
+      "address": "Ullal, Mangaluru, Karnataka",
+      "rating": 4.8,
+      "image": "https://images.pexels.com/photos/9456236/pexels-photo-9456236.jpeg?auto=compress&cs=tinysrgb&w=1200"
+    },
+    {
+      "id": 2,
+      "crop": "Rice",
+      "qty": "30 Quintals",
+      "price": "Rs 3,100/qtl",
+      "details": "Fresh harvest with organic practices.",
+      "farmer": "Suresh Patil",
+      "ownerPhone": "919812345678",
+      "address": "Surathkal, Mangaluru, Karnataka",
+      "rating": 4.9,
+      "image": "https://images.pexels.com/photos/4110251/pexels-photo-4110251.jpeg?auto=compress&cs=tinysrgb&w=1200"
+    },
+    {
+      "id": 3,
+      "crop": "Cotton",
+      "qty": "20 Quintals",
+      "price": "Rs 7,500/qtl",
+      "details": "Good quality cotton bales available.",
+      "farmer": "Ramesh Singh",
+      "ownerPhone": "919998887776",
+      "address": "Kadri, Mangaluru, Karnataka",
+      "rating": 4.5,
+      "image": "https://images.pexels.com/photos/10287682/pexels-photo-10287682.jpeg?auto=compress&cs=tinysrgb&w=1200"
+    }
+  ],
+  "createdAt": "2026-04-12T00:00:00.000Z",
+  "updatedAt": "2026-04-12T10:59:29.385Z"
+}

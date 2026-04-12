@@ -40,17 +40,18 @@ interface AppContextType {
   isAdmin: boolean;
   accounts: StoredAccounts;
   marketListings: MarketListing[];
-  registerUser: (user: User) => void;
-  accessAccount: (phone: string, password: string) =>  'success' | 'invalid_password' | 'not_found';
+  refreshMarketListings: () => Promise<MarketListing[] | null>;
+  registerUser: (user: User) => Promise<boolean>;
+  accessAccount: (phone: string, password: string) => Promise<'success' | 'invalid_password' | 'not_found'>;
   signOut: () => void;
   adminSignIn: (pin: string) => boolean;
   adminSignOut: () => void;
-  updateAccount: (phone: string, updates: Partial<Pick<User, 'name' | 'address' | 'landSize' | 'primaryCrop'>>) => void;
-  removeAccount: (phone: string) => void;
+  updateAccount: (phone: string, updates: Partial<Pick<User, 'name' | 'address' | 'landSize' | 'primaryCrop'>>) => Promise<boolean>;
+  removeAccount: (phone: string) => Promise<boolean>;
   addMarketListing: (listing: Omit<MarketListing, 'id' | 'farmer' | 'ownerPhone' | 'rating' | 'image' | 'address'>) => void;
   updateMarketListing: (id: number, updates: Partial<Pick<MarketListing, 'crop' | 'qty' | 'price' | 'details'>>) => void;
   removeMarketListing: (id: number) => void;
-  resetMarketListings: () => void;
+  resetMarketListings: () => Promise<void>;
   toasts: Toast[];
   addToast: (message: string, type: Toast['type']) => void;
   removeToast: (id: number) => void;
@@ -59,7 +60,6 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const ACCOUNTS_KEY = 'kisanhub_accounts';
 const SESSION_KEY = 'kisanhub_current_phone';
 const ADMIN_SESSION_KEY = 'kisanhub_admin_session';
 const LISTINGS_KEY = 'kisanhub_market_listings';
@@ -91,6 +91,16 @@ type MarketListingsResponse = {
   lastUpdated: string;
 };
 
+type AccountsResponse = {
+  accounts: StoredAccounts;
+  databaseFile: string;
+  lastUpdated: string;
+};
+
+type AccountResponse = {
+  account: User;
+};
+
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<LanguageCode>('en');
   const [accounts, setAccounts] = useState<StoredAccounts>({});
@@ -118,31 +128,41 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const syncAccounts = async (sessionPhone?: string | null) => {
+    try {
+      const data = await readJson<AccountsResponse>('/api/accounts');
+      setAccounts(data.accounts);
+      setIsMarketLive(true);
+
+      const activePhone = (sessionPhone ?? window.localStorage.getItem(SESSION_KEY) ?? '').trim();
+      if (activePhone && data.accounts[activePhone]) {
+        setUser(data.accounts[activePhone]);
+      } else if (activePhone) {
+        setUser(null);
+        window.localStorage.removeItem(SESSION_KEY);
+      }
+
+      return data.accounts;
+    } catch (error) {
+      console.error('Failed to sync accounts:', error);
+      setIsMarketLive(false);
+      return null;
+    }
+  };
+
   useEffect(() => {
-    const savedAccounts = window.localStorage.getItem(ACCOUNTS_KEY);
     const savedSessionPhone = window.localStorage.getItem(SESSION_KEY);
     const savedListings = window.localStorage.getItem(LISTINGS_KEY);
     const savedAdminSession = window.localStorage.getItem(ADMIN_SESSION_KEY);
     const savedLanguage = window.localStorage.getItem(LANGUAGE_KEY) as LanguageCode | null;
 
-    if (savedAccounts) {
-      const parsedAccounts = JSON.parse(savedAccounts) as StoredAccounts;
-      setAccounts(parsedAccounts);
-
-      if (savedSessionPhone && parsedAccounts[savedSessionPhone]) {
-        setUser(parsedAccounts[savedSessionPhone]);
-      }
-    }
-
     if (savedListings) {
-      const parsedAccounts = savedAccounts ? (JSON.parse(savedAccounts) as StoredAccounts) : {};
       // Migrate old listings that were saved before the 'address' field was added
       const rawListings = JSON.parse(savedListings) as MarketListing[];
       const migratedListings = rawListings.map((listing) => {
-        const ownerAccount = parsedAccounts[listing.ownerPhone];
         return {
           ...listing,
-          address: listing.address || ownerAccount?.address || 'Mangaluru, Karnataka',
+          address: listing.address || 'Mangaluru, Karnataka',
           image: getCropImage(listing.crop),
         };
       });
@@ -158,6 +178,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setIsAdmin(true);
     }
 
+    void syncAccounts(savedSessionPhone);
     void syncMarketListings();
   }, []);
 
@@ -190,32 +211,53 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setLanguageState(lang);
   };
 
-  const registerUser = (nextUser: User) => {
+  const registerUser = async (nextUser: User) => {
     const normalizedPhone = nextUser.phone.trim();
     const updatedUser = { ...nextUser, phone: normalizedPhone };
-    const nextAccounts = { ...accounts, [normalizedPhone]: updatedUser };
+    const result = await sendJson<AccountResponse>('/api/accounts/register', {
+      method: 'POST',
+      body: JSON.stringify(updatedUser),
+    });
 
-    setAccounts(nextAccounts);
-    setUser(updatedUser);
-    window.localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(nextAccounts));
+    setAccounts((prevAccounts) => ({
+      ...prevAccounts,
+      [normalizedPhone]: result.account,
+    }));
     window.localStorage.setItem(SESSION_KEY, normalizedPhone);
+    setUser(result.account);
+    await syncMarketListings();
+    void syncAccounts(normalizedPhone);
+    return true;
   };
 
-  const accessAccount = (phone: string, password: string) => {
+  const accessAccount = async (phone: string, password: string) => {
     const normalizedPhone = phone.trim();
-    const existingUser = accounts[normalizedPhone];
-
-    if (!existingUser) {
+    try {
+      const result = await sendJson<AccountResponse>('/api/accounts/login', {
+        method: 'POST',
+        body: JSON.stringify({ phone: normalizedPhone, password }),
+      });
+      setAccounts((prevAccounts) => ({
+        ...prevAccounts,
+        [normalizedPhone]: result.account,
+      }));
+      setUser(result.account);
+      window.localStorage.setItem(SESSION_KEY, normalizedPhone);
+      await syncMarketListings();
+      void syncAccounts(normalizedPhone);
+      return 'success';
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message.includes('401')) {
+          return 'invalid_password';
+        }
+        if (error.message.includes('404')) {
+          return 'not_found';
+        }
+      }
+      console.error('Failed to access account:', error);
       return 'not_found';
     }
-
-    if (existingUser.password !== password) {
-      return 'invalid_password';
-    }
-
-    setUser(existingUser);
-    window.localStorage.setItem(SESSION_KEY, normalizedPhone);
-    return 'success';
   };
 
   const signOut = () => {
@@ -237,58 +279,61 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     window.localStorage.removeItem(ADMIN_SESSION_KEY);
   };
 
-  const updateAccount = (
+  const updateAccount = async (
     phone: string,
     updates: Partial<Pick<User, 'name' | 'address' | 'landSize' | 'primaryCrop'>>
   ) => {
     const normalizedPhone = phone.trim();
-
-    setAccounts((prevAccounts) => {
-      const existing = prevAccounts[normalizedPhone];
-      if (!existing) return prevAccounts;
-
-      const nextAccounts: StoredAccounts = {
+    try {
+      const data = await sendJson<AccountResponse>(`/api/accounts/${normalizedPhone}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      });
+      setAccounts((prevAccounts) => ({
         ...prevAccounts,
-        [normalizedPhone]: {
-          ...existing,
-          ...updates,
-        },
-      };
+        [normalizedPhone]: data.account,
+      }));
 
-      window.localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(nextAccounts));
-
-      const currentPhone = window.localStorage.getItem(SESSION_KEY);
-      if (currentPhone === normalizedPhone) {
-        setUser(nextAccounts[normalizedPhone]);
+      if (window.localStorage.getItem(SESSION_KEY) === normalizedPhone) {
+        setUser(data.account);
       }
-
-      return nextAccounts;
-    });
+      return true;
+    } catch (error) {
+      console.error('Failed to update account:', error);
+      setIsMarketLive(false);
+      return false;
+    }
   };
 
-  const removeAccount = (phone: string) => {
+  const removeAccount = async (phone: string) => {
     const normalizedPhone = phone.trim();
+    try {
+      await sendNoContent(`/api/accounts/${normalizedPhone}`, {
+        method: 'DELETE',
+      });
 
-    setAccounts((prevAccounts) => {
-      if (!prevAccounts[normalizedPhone]) return prevAccounts;
+      setAccounts((prevAccounts) => {
+        const { [normalizedPhone]: _removedAccount, ...remainingAccounts } = prevAccounts;
+        return remainingAccounts;
+      });
 
-      const { [normalizedPhone]: _removedAccount, ...remainingAccounts } = prevAccounts;
-      window.localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(remainingAccounts));
-
-      const currentPhone = window.localStorage.getItem(SESSION_KEY);
-      if (currentPhone === normalizedPhone) {
+      if (window.localStorage.getItem(SESSION_KEY) === normalizedPhone) {
         setUser(null);
         window.localStorage.removeItem(SESSION_KEY);
       }
 
-      return remainingAccounts;
-    });
+      setMarketListings((prevListings) => {
+        const nextListings = prevListings.filter((listing) => listing.ownerPhone !== normalizedPhone);
+        window.localStorage.setItem(LISTINGS_KEY, JSON.stringify(nextListings));
+        return nextListings;
+      });
 
-    setMarketListings((prevListings) => {
-      const nextListings = prevListings.filter((listing) => listing.ownerPhone !== normalizedPhone);
-      window.localStorage.setItem(LISTINGS_KEY, JSON.stringify(nextListings));
-      return nextListings;
-    });
+      return true;
+    } catch (error) {
+      console.error('Failed to remove account:', error);
+      setIsMarketLive(false);
+      return false;
+    }
   };
 
   const addMarketListing = (listing: Omit<MarketListing, 'id' | 'farmer' | 'ownerPhone' | 'rating' | 'image' | 'address'>) => {
@@ -387,9 +432,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       });
   };
 
-  const resetMarketListings = () => {
-    persistListings(DEFAULT_LISTINGS);
-    setIsMarketLive(false);
+  const resetMarketListings = async () => {
+    try {
+      const data = await sendJson<{ listings: MarketListing[] }>('/api/market-listings/reset', {
+        method: 'POST',
+      });
+      persistListings(data.listings);
+      setIsMarketLive(true);
+    } catch (error) {
+      console.error('Failed to reset market listings:', error);
+      persistListings(DEFAULT_LISTINGS);
+      setIsMarketLive(false);
+    }
   };
 
   return (
@@ -401,6 +455,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         isAdmin,
         accounts,
         marketListings,
+        refreshMarketListings: syncMarketListings,
         registerUser,
         accessAccount,
         signOut,

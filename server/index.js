@@ -1,12 +1,22 @@
 import express from "express";
+import { getDatabase, getDatabaseFilePath, resetMarketListings, updateDatabase } from "./database.js";
 
 const app = express();
 const port = 3001;
 
-app.use(express.json());
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-const farmers = new Map();
-const buyers = new Map();
+  if (req.method === "OPTIONS") {
+    return res.status(204).send();
+  }
+
+  next();
+});
+
+app.use(express.json());
 
 const mandis = [
   { id: 1, name: "Lasalgaon", city: "Nashik", state: "Maharashtra", commodities: ["Onion"] },
@@ -91,45 +101,6 @@ function getMarketSummary() {
   };
 }
 
-let marketListings = [
-  {
-    id: 1,
-    crop: "Wheat",
-    qty: "50 Quintals",
-    price: "Rs 2,200/qtl",
-    details: "Clean grain and ready for dispatch.",
-    farmer: "Rajesh Kumar",
-    ownerPhone: "919876543210",
-    address: "Ullal, Mangaluru, Karnataka",
-    rating: 4.8,
-    image: "https://images.pexels.com/photos/9456236/pexels-photo-9456236.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  },
-  {
-    id: 2,
-    crop: "Rice",
-    qty: "30 Quintals",
-    price: "Rs 3,100/qtl",
-    details: "Fresh harvest with organic practices.",
-    farmer: "Suresh Patil",
-    ownerPhone: "919812345678",
-    address: "Surathkal, Mangaluru, Karnataka",
-    rating: 4.9,
-    image: "https://images.pexels.com/photos/4110251/pexels-photo-4110251.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  },
-  {
-    id: 3,
-    crop: "Cotton",
-    qty: "20 Quintals",
-    price: "Rs 7,500/qtl",
-    details: "Good quality cotton bales available.",
-    farmer: "Ramesh Singh",
-    ownerPhone: "919998887776",
-    address: "Kadri, Mangaluru, Karnataka",
-    rating: 4.5,
-    image: "https://images.pexels.com/photos/10287682/pexels-photo-10287682.jpeg?auto=compress&cs=tinysrgb&w=1200",
-  },
-];
-
 function getCropImage(crop = "") {
   const normalized = crop.trim().toLowerCase();
   const images = {
@@ -156,6 +127,22 @@ function normalizeMarketListing(listing) {
     rating: Number(listing.rating ?? 5),
     image: listing.image || getCropImage(listing.crop),
   };
+}
+
+function getMarketListings() {
+  return getDatabase().marketListings;
+}
+
+function getAccounts() {
+  return getDatabase().accounts;
+}
+
+function getFarmers() {
+  return getDatabase().farmers;
+}
+
+function getBuyers() {
+  return getDatabase().buyers;
 }
 
 function createEmptyProfile(name = "Farmer") {
@@ -292,14 +279,14 @@ app.get("/api/market-intelligence", (req, res) => {
 app.get("/api/bootstrap", (_req, res) => {
   res.json({
     marketSummary: getMarketSummary(),
-    marketListings: marketListings.map(normalizeMarketListing),
+    marketListings: getMarketListings().map(normalizeMarketListing),
     topSignal: getTopSignal(),
   });
 });
 
 app.get("/api/market-listings", (_req, res) => {
   res.json({
-    listings: marketListings.map(normalizeMarketListing),
+    listings: getMarketListings().map(normalizeMarketListing),
     lastUpdated: new Date().toISOString(),
   });
 });
@@ -324,11 +311,14 @@ app.post("/api/market-listings", (req, res) => {
     image,
   });
 
-  marketListings = [nextListing, ...marketListings];
+  updateDatabase((db) => {
+    db.marketListings = [nextListing, ...db.marketListings];
+  });
   res.status(201).json({ listing: nextListing });
 });
 
 app.put("/api/market-listings/:id", (req, res) => {
+  const marketListings = getMarketListings();
   const index = marketListings.findIndex((listing) => String(listing.id) === req.params.id);
   if (index === -1) {
     return res.status(404).json({ message: "Listing not found" });
@@ -341,17 +331,113 @@ app.put("/api/market-listings/:id", (req, res) => {
     id: existing.id,
   });
 
-  marketListings[index] = updated;
+  updateDatabase((db) => {
+    db.marketListings[index] = updated;
+  });
   res.json({ listing: updated });
 });
 
 app.delete("/api/market-listings/:id", (req, res) => {
+  const marketListings = getMarketListings();
   const existing = marketListings.find((listing) => String(listing.id) === req.params.id);
   if (!existing) {
     return res.status(404).json({ message: "Listing not found" });
   }
 
-  marketListings = marketListings.filter((listing) => String(listing.id) !== req.params.id);
+  updateDatabase((db) => {
+    db.marketListings = db.marketListings.filter((listing) => String(listing.id) !== req.params.id);
+  });
+  res.status(204).send();
+});
+
+app.post("/api/market-listings/reset", (_req, res) => {
+  const listings = resetMarketListings().map(normalizeMarketListing);
+  res.json({ listings });
+});
+
+app.get("/api/accounts", (_req, res) => {
+  res.json({
+    accounts: getAccounts(),
+    databaseFile: getDatabaseFilePath(),
+    lastUpdated: getDatabase().updatedAt,
+  });
+});
+
+app.post("/api/accounts/register", (req, res) => {
+  const { name, phone, address, password, landSize, primaryCrop } = req.body || {};
+  const normalizedPhone = String(phone || "").trim();
+
+  if (!name || !normalizedPhone || !address || !password || !landSize || !primaryCrop) {
+    return res.status(400).json({ message: "name, phone, address, password, landSize and primaryCrop are required" });
+  }
+
+  const account = {
+    name: String(name).trim(),
+    phone: normalizedPhone,
+    address: String(address).trim(),
+    password: String(password),
+    landSize: String(landSize).trim(),
+    primaryCrop: String(primaryCrop).trim(),
+  };
+
+  updateDatabase((db) => {
+    db.accounts[normalizedPhone] = account;
+  });
+
+  res.status(201).json({ account });
+});
+
+app.post("/api/accounts/login", (req, res) => {
+  const { phone, password } = req.body || {};
+  const normalizedPhone = String(phone || "").trim();
+  const account = getAccounts()[normalizedPhone];
+
+  if (!account) {
+    return res.status(404).json({ message: "Account not found", code: "not_found" });
+  }
+
+  if (account.password !== password) {
+    return res.status(401).json({ message: "Invalid password", code: "invalid_password" });
+  }
+
+  res.json({ account });
+});
+
+app.put("/api/accounts/:phone", (req, res) => {
+  const normalizedPhone = String(req.params.phone || "").trim();
+  const accounts = getAccounts();
+  const existing = accounts[normalizedPhone];
+
+  if (!existing) {
+    return res.status(404).json({ message: "Account not found" });
+  }
+
+  const updatedAccount = {
+    ...existing,
+    ...req.body,
+    phone: normalizedPhone,
+  };
+
+  updateDatabase((db) => {
+    db.accounts[normalizedPhone] = updatedAccount;
+  });
+
+  res.json({ account: updatedAccount });
+});
+
+app.delete("/api/accounts/:phone", (req, res) => {
+  const normalizedPhone = String(req.params.phone || "").trim();
+  const accounts = getAccounts();
+
+  if (!accounts[normalizedPhone]) {
+    return res.status(404).json({ message: "Account not found" });
+  }
+
+  updateDatabase((db) => {
+    delete db.accounts[normalizedPhone];
+    db.marketListings = db.marketListings.filter((listing) => listing.ownerPhone !== normalizedPhone);
+  });
+
   res.status(204).send();
 });
 
@@ -360,15 +446,19 @@ app.post("/api/auth/signup", (req, res) => {
   const id = `${role}-${Date.now()}`;
 
   if (role === "farmer") {
-    farmers.set(id, {
-      id,
-      role,
-      name,
-      email,
-      profile: createEmptyProfile(name || "Farmer"),
+    updateDatabase((db) => {
+      db.farmers[id] = {
+        id,
+        role,
+        name,
+        email,
+        profile: createEmptyProfile(name || "Farmer"),
+      };
     });
   } else {
-    buyers.set(id, { id, role, name, email });
+    updateDatabase((db) => {
+      db.buyers[id] = { id, role, name, email };
+    });
   }
 
   res.json({ userId: id, role });
@@ -376,8 +466,8 @@ app.post("/api/auth/signup", (req, res) => {
 
 app.post("/api/auth/login", (req, res) => {
   const { role, identifier } = req.body;
-  const store = role === "farmer" ? farmers : buyers;
-  const existing = [...store.values()].find((item) => item.email === identifier || item.name === identifier);
+  const store = role === "farmer" ? getFarmers() : getBuyers();
+  const existing = Object.values(store).find((item) => item.email === identifier || item.name === identifier);
 
   if (existing) {
     return res.json({ userId: existing.id, role });
@@ -385,23 +475,27 @@ app.post("/api/auth/login", (req, res) => {
 
   if (role === "farmer") {
     const id = `farmer-demo-${Date.now()}`;
-    farmers.set(id, {
-      id,
-      role,
-      name: "New Farmer",
-      email: identifier,
-      profile: createEmptyProfile("New Farmer"),
+    updateDatabase((db) => {
+      db.farmers[id] = {
+        id,
+        role,
+        name: "New Farmer",
+        email: identifier,
+        profile: createEmptyProfile("New Farmer"),
+      };
     });
     return res.json({ userId: id, role });
   }
 
   const id = `buyer-demo-${Date.now()}`;
-  buyers.set(id, { id, role, name: "Buyer", email: identifier });
+  updateDatabase((db) => {
+    db.buyers[id] = { id, role, name: "Buyer", email: identifier };
+  });
   return res.json({ userId: id, role });
 });
 
 app.get("/api/farmer/:id", (req, res) => {
-  const farmer = farmers.get(req.params.id);
+  const farmer = getFarmers()[req.params.id];
   if (!farmer) {
     return res.status(404).json({ message: "Farmer not found" });
   }
@@ -421,12 +515,12 @@ app.get("/api/farmer/:id", (req, res) => {
     topSignal: getTopSignal(),
     marketSummary: getMarketSummary(),
     mandiIntelligence: getMandiIntelligence(),
-    marketListings: marketListings.map(normalizeMarketListing),
+    marketListings: getMarketListings().map(normalizeMarketListing),
   });
 });
 
 app.put("/api/farmer/:id/profile", (req, res) => {
-  const farmer = farmers.get(req.params.id);
+  const farmer = getFarmers()[req.params.id];
   if (!farmer) {
     return res.status(404).json({ message: "Farmer not found" });
   }
@@ -435,6 +529,10 @@ app.put("/api/farmer/:id/profile", (req, res) => {
     ...farmer.profile,
     ...req.body,
   };
+
+  updateDatabase((db) => {
+    db.farmers[req.params.id] = farmer;
+  });
 
   res.json({
     profile: farmer.profile,

@@ -8,6 +8,8 @@ export const Registration: React.FC = () => {
   const { user, registerUser, accessAccount, addToast } = useAppContext();
   const { t, translateCrop } = useTranslations();
   const navigate = useNavigate();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isAccessing, setIsAccessing] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || '',
     phone: user?.phone || '',
@@ -30,30 +32,46 @@ export const Registration: React.FC = () => {
     });
   }, [user]);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    registerUser(formData);
-    addToast(t('toast.registrationSaved'), 'success');
-    navigate('/market');
+    setIsSaving(true);
+    try {
+      await registerUser(formData);
+      addToast(t('toast.registrationSaved'), 'success');
+      navigate('/market');
+    } catch (error) {
+      console.error('Failed to save registration:', error);
+      addToast('Registration could not be saved. Please try again.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleAccessAccount = (e: React.FormEvent) => {
+  const handleAccessAccount = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsAccessing(true);
 
-    const result = accessAccount(accessPhone, accessPassword);
+    try {
+      const result = await accessAccount(accessPhone, accessPassword);
     
-    if (result === 'success') {
-      addToast(t('toast.welcomeBack'), 'success');
-      navigate('/market');
-      return;
-    }
+      if (result === 'success') {
+        addToast(t('toast.welcomeBack'), 'success');
+        navigate('/market');
+        return;
+      }
 
-    if (result === 'invalid_password') {
-      addToast(t('toast.invalidPassword') || 'Invalid password', 'error');
-      return;
-    }
+      if (result === 'invalid_password') {
+        addToast(t('toast.invalidPassword') || 'Invalid password', 'error');
+        return;
+      }
 
-    addToast(t('toast.accountNotFound'), 'warning');
+      addToast(t('toast.accountNotFound'), 'warning');
+    } catch (error) {
+      console.error('Failed to access account:', error);
+      addToast('Unable to access account right now. Please try again.', 'error');
+    } finally {
+      setIsAccessing(false);
+    }
   };
 
   if (user) {
@@ -165,8 +183,8 @@ export const Registration: React.FC = () => {
               </select>
             </div>
 
-            <button type="submit" className="btn w-full">
-              <Save size={18} /> {t('registration.save')}
+            <button type="submit" className="btn w-full" disabled={isSaving}>
+              <Save size={18} /> {isSaving ? 'Saving...' : t('registration.save')}
             </button>
           </form>
         </div>
@@ -203,8 +221,8 @@ export const Registration: React.FC = () => {
                   required 
                 />
               </div>
-              <button type="submit" className="btn btn-secondary w-full">
-                <LogIn size={18} /> {t('registration.access')}
+              <button type="submit" className="btn btn-secondary w-full" disabled={isAccessing}>
+                <LogIn size={18} /> {isAccessing ? 'Checking...' : t('registration.access')}
               </button>
             </form>
           </div>
