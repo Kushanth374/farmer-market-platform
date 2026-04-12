@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { TrendingUp, TrendingDown, Activity, Search, MapPin, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useTranslations } from '../i18n';
+import { readJson } from '../app/api';
+import { Mandi, PriceAlert, derivePriceAlerts } from '../app/marketAlerts';
 
 const PRICE_HISTORY = [
   { month: 'Jan', wheat: 2100, rice: 2900, cotton: 7400, soybean: 4300 },
@@ -12,36 +14,16 @@ const PRICE_HISTORY = [
   { month: 'Jun', wheat: 2300, rice: 3050, cotton: 7200, soybean: 4600 },
 ];
 
-interface MandiPrice {
-  commodity: string;
-  price: number;
-  trend: 'up' | 'down';
-  variance: string;
-}
-
-interface Mandi {
-  id: number;
-  name: string;
-  city: string;
-  state: string;
-  prices: MandiPrice[];
-}
-
 interface MarketSummary {
   averages: Record<string, number>;
   trends: Record<string, string>;
   lastUpdated: string;
 }
 
-interface PriceAlert {
-  id: string;
-  mandi: string;
-  commodity: string;
-  movement: 'spike' | 'drop';
-  variance: number;
-  price: number;
-  severity: 'high' | 'medium';
-}
+type MarketIntelligenceResponse = {
+  summary: MarketSummary;
+  mandis: Mandi[];
+};
 
 const FALLBACK_MANDIS: Mandi[] = [
   {
@@ -100,6 +82,12 @@ export const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isOfflineFallback, setIsOfflineFallback] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    return window.innerWidth <= 768;
+  });
 
   const getAveragePrice = (crop: 'Wheat' | 'Rice' | 'Cotton' | 'Soybean') => {
     const value = summary?.averages?.[crop];
@@ -113,11 +101,7 @@ export const Dashboard: React.FC = () => {
 
   const fetchIntelligence = async (search = '') => {
     try {
-      const resp = await fetch(`/api/market-intelligence?search=${encodeURIComponent(search)}`);
-      if (!resp.ok) {
-        throw new Error(`Market API returned ${resp.status}`);
-      }
-      const data = await resp.json();
+      const data = await readJson<MarketIntelligenceResponse>(`/api/market-intelligence?search=${encodeURIComponent(search)}`);
       setMandis(data.mandis);
       setSummary(data.summary);
       setIsOfflineFallback(false);
@@ -144,6 +128,28 @@ export const Dashboard: React.FC = () => {
     fetchIntelligence();
   }, []);
 
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      fetchIntelligence(searchTerm);
+    }, 30000);
+
+    return () => window.clearInterval(intervalId);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -164,46 +170,25 @@ export const Dashboard: React.FC = () => {
       ]
     : [];
 
-  const alerts: PriceAlert[] = mandis
-    .flatMap((mandi) =>
-      mandi.prices.map((pricePoint) => {
-        const variance = Number.parseFloat(pricePoint.variance) || 0;
-        const movement: 'spike' | 'drop' = pricePoint.trend === 'up' ? 'spike' : 'drop';
-        const severity: 'high' | 'medium' = variance >= 1.5 ? 'high' : 'medium';
-        return {
-          id: `${mandi.id}-${pricePoint.commodity}-${movement}`,
-          mandi: mandi.name,
-          commodity: pricePoint.commodity,
-          movement,
-          variance,
-          price: pricePoint.price,
-          severity,
-        };
-      })
-    )
-    .filter((item) => item.variance >= 0.8)
-    .sort((a, b) => b.variance - a.variance)
-    .slice(0, 6);
+  const alerts: PriceAlert[] = derivePriceAlerts(mandis);
 
   return (
-    <div className="max-w-4xl mx-auto pb-12">
-      <div className="flex items-center justify-between mb-6">
-        <div>
+    <div className="dashboard-page max-w-4xl mx-auto pb-12">
+      <div className="dashboard-header flex items-center justify-between mb-6">
+        <div className="dashboard-header-copy">
           <h2 className="heading-1">{t('dashboard.title')}</h2>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="dashboard-status flex items-center gap-2 mt-1">
             <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 bg-green-100 text-green-700 rounded-full animate-pulse">
               {t('dashboard.live')}
             </span>
             <span className="text-muted" style={{ fontSize: '0.8rem' }}>
-              {isOfflineFallback
-                ? t('dashboard.offlineData')
-                : t('dashboard.realtimeUpdated', { time: summary?.lastUpdated || t('dashboard.today') })}
+              {t('dashboard.realtimeUpdated', { time: summary?.lastUpdated || t('dashboard.today') })}
             </span>
           </div>
         </div>
         <button
           onClick={handleRefresh}
-          className={`btn btn-secondary p-2 rounded-full ${isRefreshing ? 'animate-spin' : ''}`}
+          className={`dashboard-refresh-btn btn btn-secondary p-2 rounded-full ${isRefreshing ? 'animate-spin' : ''}`}
           title={t('dashboard.refreshPrices')}
         >
           <RefreshCw size={18} />
@@ -229,16 +214,16 @@ export const Dashboard: React.FC = () => {
       </div>
 
       <div className="mb-8">
-        <form onSubmit={handleSearch} className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={20} />
+        <form onSubmit={handleSearch} className="dashboard-search-form relative">
+          <Search className="dashboard-search-icon absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={20} />
           <input
             type="text"
             placeholder={t('dashboard.searchPlaceholder')}
-            className="input-field pl-12 pr-24 h-14 text-lg shadow-sm"
+            className="dashboard-search-input input-field pl-12 pr-24 h-14 text-lg shadow-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <button type="submit" className="absolute right-2 top-2 bottom-2 btn px-6">
+          <button type="submit" className="dashboard-search-btn absolute right-2 top-2 bottom-2 btn px-6">
             {t('dashboard.search')}
           </button>
         </form>
@@ -257,6 +242,7 @@ export const Dashboard: React.FC = () => {
             {alerts.map((alert) => (
               <div
                 key={alert.id}
+                className="dashboard-alert-item"
                 style={{
                   border: '1px solid var(--border)',
                   borderLeft: `5px solid ${alert.movement === 'spike' ? '#16a34a' : '#dc2626'}`,
@@ -265,7 +251,7 @@ export const Dashboard: React.FC = () => {
                   background: 'var(--surface)',
                 }}
               >
-                <div className="flex items-center justify-between" style={{ marginBottom: '0.35rem' }}>
+                <div className="dashboard-alert-head flex items-center justify-between" style={{ marginBottom: '0.35rem' }}>
                   <strong style={{ fontSize: '0.95rem' }}>
                     {translateCrop(alert.commodity)} {alert.movement === 'spike' ? t('dashboard.priceSpike') : t('dashboard.priceDrop')}
                   </strong>
@@ -300,13 +286,13 @@ export const Dashboard: React.FC = () => {
 
       <div className="grid-cols-2 gap-8 mb-8">
         <div className="card h-fit">
-          <div className="flex items-center justify-between mb-6">
+          <div className="dashboard-section-head flex items-center justify-between mb-6">
             <h3 className="flex items-center gap-2 font-bold text-lg">
               <MapPin size={20} className="text-primary" />
               {t('dashboard.liveMarketPrices')}
             </h3>
             {searchTerm && (
-              <button onClick={() => { setSearchTerm(''); fetchIntelligence(''); }} className="text-xs text-primary font-medium">
+              <button onClick={() => { setSearchTerm(''); fetchIntelligence(''); }} className="dashboard-clear-btn text-xs text-primary font-medium">
                 {t('dashboard.clearSearch')}
               </button>
             )}
@@ -318,7 +304,7 @@ export const Dashboard: React.FC = () => {
             ) : mandis.length > 0 ? (
               mandis.map((mandi) => (
                 <div key={mandi.id} className="p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-primary/30 transition-colors">
-                  <div className="flex justify-between items-start mb-3">
+                  <div className="dashboard-mandi-head flex justify-between items-start mb-3">
                     <div>
                       <h4 className="font-bold text-stone-800">{mandi.name}</h4>
                       <p className="text-xs text-muted">{mandi.city}, {mandi.state}</p>
@@ -329,7 +315,7 @@ export const Dashboard: React.FC = () => {
                   </div>
                   <div className="space-y-2">
                     {mandi.prices.map((p, idx) => (
-                      <div key={idx} className="flex items-center justify-between py-1 border-t border-gray-200/50">
+                      <div key={idx} className="dashboard-price-row flex items-center justify-between py-1 border-t border-gray-200/50">
                         <span className="text-sm font-medium text-stone-600">{translateCrop(p.commodity)}</span>
                         <div className="text-right">
                           <span className="text-sm font-bold block">Rs {p.price.toLocaleString('en-IN')}</span>
@@ -362,7 +348,7 @@ export const Dashboard: React.FC = () => {
             </div>
             <div style={{ height: '240px' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={PRICE_HISTORY} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart data={PRICE_HISTORY} margin={{ top: 10, right: isMobile ? 0 : 10, left: isMobile ? -32 : -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3} />
@@ -371,7 +357,7 @@ export const Dashboard: React.FC = () => {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                   <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
+                  <YAxis hide={isMobile} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
                   <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }} />
                   <Area type="monotone" dataKey="wheat" stroke="var(--primary)" strokeWidth={2} fillOpacity={1} fill="url(#colorPrice)" />
                   <Line type="monotone" dataKey="rice" stroke="var(--accent)" strokeWidth={2} dot={false} />
@@ -387,12 +373,12 @@ export const Dashboard: React.FC = () => {
             </div>
             <div style={{ height: '240px' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={demandData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} layout="vertical">
+                <BarChart data={demandData} margin={{ top: 10, right: isMobile ? 0 : 10, left: isMobile ? -16 : -20, bottom: 0 }} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" />
                   <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
-                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--text-muted)' }} width={80} />
+                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: isMobile ? 11 : 12, fill: 'var(--text-muted)' }} width={isMobile ? 64 : 80} />
                   <Tooltip cursor={{ fill: 'var(--bg-color)' }} contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)' }} />
-                  <Bar dataKey="value" fill="var(--primary)" radius={[0, 4, 4, 0]} barSize={24} />
+                  <Bar dataKey="value" fill="var(--primary)" radius={[0, 4, 4, 0]} barSize={isMobile ? 18 : 24} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

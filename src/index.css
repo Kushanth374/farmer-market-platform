@@ -72,6 +72,7 @@ a {
   border-right: 1px solid rgba(42, 79, 51, 0.1);
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
   transition: all 0.3s ease;
   z-index: 40;
   backdrop-filter: blur(16px);
@@ -83,6 +84,7 @@ a {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-width: 0;
 }
 
 .top-nav {
@@ -102,6 +104,12 @@ a {
   flex: 1;
   overflow-y: auto;
   padding: 2rem;
+  min-width: 0;
+}
+
+
+.sidebar-backdrop {
+  display: none;
 }
 
 /* Common UI */
@@ -270,8 +278,167 @@ a {
 }
 @media (max-width: 768px) {
   .grid-cols-4, .grid-cols-3, .grid-cols-2 { grid-template-columns: 1fr; }
-  .sidebar { position: absolute; transform: translateX(-100%); }
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(82vw, 320px);
+    max-width: 320px;
+    transform: translateX(-100%);
+  }
   .sidebar.open { transform: translateX(0); box-shadow: var(--shadow-lg); }
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    border: 0;
+    background: rgba(17, 34, 22, 0.35);
+    backdrop-filter: blur(2px);
+    z-index: 35;
+  }
+}
+
+.dashboard-page {
+  width: 100%;
+}
+
+.dashboard-header,
+.dashboard-status,
+.dashboard-alert-head,
+.dashboard-section-head,
+.dashboard-mandi-head,
+.dashboard-price-row {
+  gap: 0.75rem;
+}
+
+.dashboard-search-form {
+  min-height: 3.5rem;
+}
+
+.dashboard-search-input {
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .app-container {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .dashboard-page {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .top-nav {
+    height: auto;
+    padding: 1rem;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .page-content {
+    padding: 1rem;
+  }
+
+  .top-nav-group,
+  .top-nav-actions {
+    width: 100%;
+  }
+
+  .top-nav-group {
+    min-width: 0;
+  }
+
+  .top-nav-title {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .top-nav-actions {
+    justify-content: flex-end;
+  }
+
+
+  .dashboard-header,
+  .dashboard-status,
+  .dashboard-alert-head,
+  .dashboard-section-head,
+  .dashboard-mandi-head,
+  .dashboard-price-row {
+    flex-wrap: wrap;
+  }
+
+  .dashboard-header {
+    align-items: flex-start;
+  }
+
+  .dashboard-refresh-btn {
+    align-self: flex-start;
+  }
+
+  .dashboard-search-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .dashboard-search-icon {
+    top: 1.05rem;
+    transform: none;
+  }
+
+  .dashboard-search-input {
+    padding-right: 1rem;
+    padding-left: 3rem;
+    height: 3.5rem;
+    font-size: 1rem;
+  }
+
+  .dashboard-search-btn {
+    position: static;
+    width: 100%;
+    min-height: 3rem;
+  }
+
+  .dashboard-alert-item {
+    padding: 0.85rem;
+  }
+
+  .dashboard-clear-btn {
+    width: 100%;
+    text-align: left;
+  }
+
+  .toast-container {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+  }
+
+  .toast {
+    width: 100%;
+    padding: 0.9rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .heading-1 {
+    font-size: 1.5rem;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+
+  .top-nav {
+    padding: 0.85rem;
+  }
+
+  .page-content {
+    padding: 0.85rem;
+  }
 }
 
 /* Typography styles */

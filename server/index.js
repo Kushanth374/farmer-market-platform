@@ -39,6 +39,13 @@ const basePrices = {
   Cumin: 28000
 };
 
+const priceSignals = [
+  { crop: "Onion", mandi: "Lasalgaon", demandIndex: 91, trend: "up", price: 1850 },
+  { crop: "Wheat", mandi: "Khanna", demandIndex: 84, trend: "up", price: 2350 },
+  { crop: "Cotton", mandi: "Warangal", demandIndex: 79, trend: "down", price: 7100 },
+  { crop: "Soybean", mandi: "Indore", demandIndex: 82, trend: "up", price: 4600 },
+];
+
 function getSimulatedPrice(commodity) {
   const base = basePrices[commodity] || 1000;
   // Fluctuate by +/- 2%
@@ -84,26 +91,72 @@ function getMarketSummary() {
   };
 }
 
-const marketListings = [
+let marketListings = [
   {
-    id: "1",
-    crop: "Onion",
-    quantity: "120 quintals",
-    price: 1725,
-    buyer: "Nashik Fresh Aggregates",
-    location: "Nashik",
-    demand: "High",
+    id: 1,
+    crop: "Wheat",
+    qty: "50 Quintals",
+    price: "Rs 2,200/qtl",
+    details: "Clean grain and ready for dispatch.",
+    farmer: "Rajesh Kumar",
+    ownerPhone: "919876543210",
+    address: "Ullal, Mangaluru, Karnataka",
+    rating: 4.8,
+    image: "https://images.pexels.com/photos/9456236/pexels-photo-9456236.jpeg?auto=compress&cs=tinysrgb&w=1200",
   },
   {
-    id: "2",
-    crop: "Tomato",
-    quantity: "80 crates",
-    price: 980,
-    buyer: "Pune Urban Retail",
-    location: "Pune",
-    demand: "Medium",
+    id: 2,
+    crop: "Rice",
+    qty: "30 Quintals",
+    price: "Rs 3,100/qtl",
+    details: "Fresh harvest with organic practices.",
+    farmer: "Suresh Patil",
+    ownerPhone: "919812345678",
+    address: "Surathkal, Mangaluru, Karnataka",
+    rating: 4.9,
+    image: "https://images.pexels.com/photos/4110251/pexels-photo-4110251.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  },
+  {
+    id: 3,
+    crop: "Cotton",
+    qty: "20 Quintals",
+    price: "Rs 7,500/qtl",
+    details: "Good quality cotton bales available.",
+    farmer: "Ramesh Singh",
+    ownerPhone: "919998887776",
+    address: "Kadri, Mangaluru, Karnataka",
+    rating: 4.5,
+    image: "https://images.pexels.com/photos/10287682/pexels-photo-10287682.jpeg?auto=compress&cs=tinysrgb&w=1200",
   },
 ];
+
+function getCropImage(crop = "") {
+  const normalized = crop.trim().toLowerCase();
+  const images = {
+    wheat: "https://images.pexels.com/photos/9456236/pexels-photo-9456236.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    rice: "https://images.pexels.com/photos/4110251/pexels-photo-4110251.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    cotton: "https://images.pexels.com/photos/10287682/pexels-photo-10287682.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    sugarcane: "https://images.pexels.com/photos/14593317/pexels-photo-14593317.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    soybean: "https://images.pexels.com/photos/7421208/pexels-photo-7421208.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    default: "https://images.pexels.com/photos/2132250/pexels-photo-2132250.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  };
+  return images[normalized] || images.default;
+}
+
+function normalizeMarketListing(listing) {
+  return {
+    id: Number(listing.id),
+    crop: listing.crop,
+    qty: listing.qty,
+    price: listing.price,
+    details: listing.details || "",
+    farmer: listing.farmer,
+    ownerPhone: listing.ownerPhone,
+    address: listing.address || "Mangaluru, Karnataka",
+    rating: Number(listing.rating ?? 5),
+    image: listing.image || getCropImage(listing.crop),
+  };
+}
 
 function createEmptyProfile(name = "Farmer") {
   return {
@@ -239,9 +292,67 @@ app.get("/api/market-intelligence", (req, res) => {
 app.get("/api/bootstrap", (_req, res) => {
   res.json({
     marketSummary: getMarketSummary(),
-    marketListings,
+    marketListings: marketListings.map(normalizeMarketListing),
     topSignal: getTopSignal(),
   });
+});
+
+app.get("/api/market-listings", (_req, res) => {
+  res.json({
+    listings: marketListings.map(normalizeMarketListing),
+    lastUpdated: new Date().toISOString(),
+  });
+});
+
+app.post("/api/market-listings", (req, res) => {
+  const { crop, qty, price, details, farmer, ownerPhone, address, rating, image } = req.body || {};
+
+  if (!crop || !qty || !price || !farmer || !ownerPhone) {
+    return res.status(400).json({ message: "crop, qty, price, farmer and ownerPhone are required" });
+  }
+
+  const nextListing = normalizeMarketListing({
+    id: Date.now(),
+    crop,
+    qty,
+    price,
+    details,
+    farmer,
+    ownerPhone,
+    address,
+    rating,
+    image,
+  });
+
+  marketListings = [nextListing, ...marketListings];
+  res.status(201).json({ listing: nextListing });
+});
+
+app.put("/api/market-listings/:id", (req, res) => {
+  const index = marketListings.findIndex((listing) => String(listing.id) === req.params.id);
+  if (index === -1) {
+    return res.status(404).json({ message: "Listing not found" });
+  }
+
+  const existing = marketListings[index];
+  const updated = normalizeMarketListing({
+    ...existing,
+    ...req.body,
+    id: existing.id,
+  });
+
+  marketListings[index] = updated;
+  res.json({ listing: updated });
+});
+
+app.delete("/api/market-listings/:id", (req, res) => {
+  const existing = marketListings.find((listing) => String(listing.id) === req.params.id);
+  if (!existing) {
+    return res.status(404).json({ message: "Listing not found" });
+  }
+
+  marketListings = marketListings.filter((listing) => String(listing.id) !== req.params.id);
+  res.status(204).send();
 });
 
 app.post("/api/auth/signup", (req, res) => {
@@ -310,7 +421,7 @@ app.get("/api/farmer/:id", (req, res) => {
     topSignal: getTopSignal(),
     marketSummary: getMarketSummary(),
     mandiIntelligence: getMandiIntelligence(),
-    marketListings,
+    marketListings: marketListings.map(normalizeMarketListing),
   });
 });
 

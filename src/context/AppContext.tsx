@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import type { LanguageCode } from '../i18n';
+import sugarcaneImage from '../assets/sugarcane-botanical.webp';
+import { readJson, sendJson, sendNoContent } from '../app/api';
 
 export type User = {
   name: string;
@@ -52,6 +54,7 @@ interface AppContextType {
   toasts: Toast[];
   addToast: (message: string, type: Toast['type']) => void;
   removeToast: (id: number) => void;
+  isMarketLive: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -64,10 +67,10 @@ const LANGUAGE_KEY = 'kisanhub_language';
 const ADMIN_PIN = 'admin@123';
 
 const cropImageMap: Record<string, string> = {
-  wheat: 'https://images.pexels.com/photos/326082/pexels-photo-326082.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  rice: 'https://images.pexels.com/photos/723198/pexels-photo-723198.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  cotton: 'https://images.pexels.com/photos/39353/cotton-plant-cotton-bolls-cotton-open-39353.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  sugarcane: 'https://images.pexels.com/photos/5503257/pexels-photo-5503257.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  wheat: 'https://images.pexels.com/photos/9456236/pexels-photo-9456236.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  rice: 'https://images.pexels.com/photos/4110251/pexels-photo-4110251.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  cotton: 'https://images.pexels.com/photos/10287682/pexels-photo-10287682.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  sugarcane: sugarcaneImage,
   soybean: 'https://images.pexels.com/photos/7421208/pexels-photo-7421208.jpeg?auto=compress&cs=tinysrgb&w=1200',
   default: 'https://images.pexels.com/photos/2132250/pexels-photo-2132250.jpeg?auto=compress&cs=tinysrgb&w=1200',
 };
@@ -83,6 +86,11 @@ const DEFAULT_LISTINGS: MarketListing[] = [
   { id: 3, crop: 'Cotton', qty: '20 Quintals', price: 'Rs 7,500/qtl', details: 'Good quality cotton bales available.', farmer: 'Ramesh Singh', ownerPhone: '919998887776', address: 'Kadri, Mangaluru, Karnataka', rating: 4.5, image: cropImageMap.cotton },
 ];
 
+type MarketListingsResponse = {
+  listings: MarketListing[];
+  lastUpdated: string;
+};
+
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<LanguageCode>('en');
   const [accounts, setAccounts] = useState<StoredAccounts>({});
@@ -90,6 +98,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isAdmin, setIsAdmin] = useState(false);
   const [marketListings, setMarketListings] = useState<MarketListing[]>(DEFAULT_LISTINGS);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [isMarketLive, setIsMarketLive] = useState(false);
+
+  const persistListings = (listings: MarketListing[]) => {
+    setMarketListings(listings);
+    window.localStorage.setItem(LISTINGS_KEY, JSON.stringify(listings));
+  };
+
+  const syncMarketListings = async () => {
+    try {
+      const data = await readJson<MarketListingsResponse>('/api/market-listings');
+      persistListings(data.listings);
+      setIsMarketLive(true);
+      return data.listings;
+    } catch (error) {
+      console.error('Failed to sync market listings:', error);
+      setIsMarketLive(false);
+      return null;
+    }
+  };
 
   useEffect(() => {
     const savedAccounts = window.localStorage.getItem(ACCOUNTS_KEY);
@@ -112,14 +139,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // Migrate old listings that were saved before the 'address' field was added
       const rawListings = JSON.parse(savedListings) as MarketListing[];
       const migratedListings = rawListings.map((listing) => {
-        if (!listing.address) {
-          // Try to find the address from the registered account
-          const ownerAccount = parsedAccounts[listing.ownerPhone];
-          return { ...listing, address: ownerAccount?.address || 'Mangaluru, Karnataka' };
-        }
-        return listing;
+        const ownerAccount = parsedAccounts[listing.ownerPhone];
+        return {
+          ...listing,
+          address: listing.address || ownerAccount?.address || 'Mangaluru, Karnataka',
+          image: getCropImage(listing.crop),
+        };
       });
       setMarketListings(migratedListings);
+      window.localStorage.setItem(LISTINGS_KEY, JSON.stringify(migratedListings));
     }
 
     if (savedLanguage) {
@@ -129,6 +157,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (savedAdminSession === 'true') {
       setIsAdmin(true);
     }
+
+    void syncMarketListings();
+  }, []);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      void syncMarketListings();
+    }, 30000);
+
+    return () => window.clearInterval(intervalId);
   }, []);
 
   useEffect(() => {
@@ -256,57 +294,102 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const addMarketListing = (listing: Omit<MarketListing, 'id' | 'farmer' | 'ownerPhone' | 'rating' | 'image' | 'address'>) => {
     if (!user) return;
 
-    const nextListings: MarketListing[] = [
-      {
-        id: Date.now(),
-        crop: listing.crop,
-        qty: listing.qty,
-        price: listing.price,
-        details: listing.details,
-        farmer: user.name,
-        ownerPhone: user.phone,
-        address: user.address,
-        rating: 5.0,
-        image: getCropImage(listing.crop),
-      },
-      ...marketListings,
-    ];
+    const optimisticListing: MarketListing = {
+      id: Date.now(),
+      crop: listing.crop,
+      qty: listing.qty,
+      price: listing.price,
+      details: listing.details,
+      farmer: user.name,
+      ownerPhone: user.phone,
+      address: user.address,
+      rating: 5.0,
+      image: getCropImage(listing.crop),
+    };
 
-    setMarketListings(nextListings);
-    window.localStorage.setItem(LISTINGS_KEY, JSON.stringify(nextListings));
+    setMarketListings((currentListings) => {
+      const nextListings = [optimisticListing, ...currentListings];
+      window.localStorage.setItem(LISTINGS_KEY, JSON.stringify(nextListings));
+      return nextListings;
+    });
+
+    void sendJson<{ listing: MarketListing }>('/api/market-listings', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...optimisticListing,
+        id: undefined,
+      }),
+    })
+      .then((data) => {
+        setMarketListings((currentListings) => {
+          const nextListings = currentListings.map((currentListing) =>
+            currentListing.id === optimisticListing.id ? data.listing : currentListing,
+          );
+          window.localStorage.setItem(LISTINGS_KEY, JSON.stringify(nextListings));
+          return nextListings;
+        });
+        setIsMarketLive(true);
+      })
+      .catch((error) => {
+        console.error('Failed to create market listing:', error);
+        setIsMarketLive(false);
+      });
   };
 
   const updateMarketListing = (
     id: number,
     updates: Partial<Pick<MarketListing, 'crop' | 'qty' | 'price' | 'details'>>
   ) => {
-    setMarketListings((prevListings) => {
-      const nextListings = prevListings.map((listing) => {
-        if (listing.id !== id) return listing;
-        const nextCrop = updates.crop ?? listing.crop;
-        return {
-          ...listing,
-          ...updates,
-          crop: nextCrop,
-          image: getCropImage(nextCrop),
-        };
-      });
-      window.localStorage.setItem(LISTINGS_KEY, JSON.stringify(nextListings));
-      return nextListings;
+    const previousListings = marketListings;
+    const nextListings = marketListings.map((listing) => {
+      if (listing.id !== id) return listing;
+      const nextCrop = updates.crop ?? listing.crop;
+      return {
+        ...listing,
+        ...updates,
+        crop: nextCrop,
+        image: getCropImage(nextCrop),
+      };
     });
+
+    persistListings(nextListings);
+
+    void sendJson<{ listing: MarketListing }>(`/api/market-listings/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    })
+      .then((data) => {
+        persistListings(nextListings.map((listing) => (listing.id === id ? data.listing : listing)));
+        setIsMarketLive(true);
+      })
+      .catch((error) => {
+        console.error('Failed to update market listing:', error);
+        persistListings(previousListings);
+        setIsMarketLive(false);
+      });
   };
 
   const removeMarketListing = (id: number) => {
-    setMarketListings((prevListings) => {
-      const nextListings = prevListings.filter((listing) => listing.id !== id);
-      window.localStorage.setItem(LISTINGS_KEY, JSON.stringify(nextListings));
-      return nextListings;
-    });
+    const previousListings = marketListings;
+    const nextListings = marketListings.filter((listing) => listing.id !== id);
+    persistListings(nextListings);
+
+    void sendNoContent(`/api/market-listings/${id}`, {
+      method: 'DELETE',
+    })
+      .then(() => {
+        setIsMarketLive(true);
+      })
+      .catch((error) => {
+        console.error('Failed to remove market listing:', error);
+        persistListings(previousListings);
+        setIsMarketLive(false);
+      });
   };
 
   const resetMarketListings = () => {
-    setMarketListings(DEFAULT_LISTINGS);
-    window.localStorage.setItem(LISTINGS_KEY, JSON.stringify(DEFAULT_LISTINGS));
+    persistListings(DEFAULT_LISTINGS);
+    setIsMarketLive(false);
   };
 
   return (
@@ -332,6 +415,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         toasts,
         addToast,
         removeToast,
+        isMarketLive,
       }}
     >
       {children}

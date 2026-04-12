@@ -34,6 +34,7 @@ const translations: Record<string, TranslationEntry> = {
   'page.schemes': { en: 'Schemes & Loans', hi: 'योजनाएं और ऋण', mr: 'योजना आणि कर्ज' },
   'page.market': { en: 'Direct Market', hi: 'सीधा बाजार', mr: 'थेट बाजार' },
   
+  'page.dashboard': { en: 'Market Intelligence', hi: 'à¤¬à¤¾à¤œà¤¾à¤° à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€', mr: 'à¤¬à¤¾à¤œà¤¾à¤° à¤®à¤¾à¤¹à¤¿à¤¤à¥€' },
   'page.admin': { en: 'Admin Panel', hi: 'Admin Panel', mr: 'Admin Panel' },
   'crop.select': { en: 'Select Crop', hi: 'फसल चुनें', mr: 'पीक निवडा' },
   'crop.wheat': { en: 'Wheat', hi: 'गेहूं', mr: 'गहू' },

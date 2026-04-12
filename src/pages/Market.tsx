@@ -3,9 +3,52 @@ import { ShoppingBag, Star, TrendingUp, Tags, Receipt } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { useTranslations } from '../i18n';
 import { BillModal } from '../components/BillModal';
+import sugarcaneImage from '../assets/sugarcane-botanical.webp';
+
+const marketFallbackImages: Record<string, string> = {
+  wheat: 'https://images.pexels.com/photos/9456236/pexels-photo-9456236.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  rice: 'https://images.pexels.com/photos/4110251/pexels-photo-4110251.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  cotton: 'https://images.pexels.com/photos/10287682/pexels-photo-10287682.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  sugarcane: sugarcaneImage,
+  soybean: 'https://images.pexels.com/photos/7421208/pexels-photo-7421208.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  default: 'https://images.pexels.com/photos/2132250/pexels-photo-2132250.jpeg?auto=compress&cs=tinysrgb&w=1200',
+};
+
+const getMarketImageFallback = (crop: string) => {
+  const normalized = crop.trim().toLowerCase();
+  return marketFallbackImages[normalized] || marketFallbackImages.default;
+};
+
+const MarketCardImage: React.FC<{ crop: string; image?: string; height: string }> = ({ crop, image, height }) => {
+  const fallbackSrc = getMarketImageFallback(crop);
+  const [src, setSrc] = useState(image || fallbackSrc);
+
+  React.useEffect(() => {
+    setSrc(image || fallbackSrc);
+  }, [image, fallbackSrc]);
+
+  return (
+    <img
+      src={src}
+      alt={crop}
+      onError={() => {
+        if (src !== fallbackSrc) {
+          setSrc(fallbackSrc);
+        }
+      }}
+      style={{
+        width: '100%',
+        height,
+        borderRadius: '12px',
+        marginBottom: '1rem',
+        objectFit: 'cover',
+      }}
+    />
+  );
+};
 
 export const Market: React.FC = () => {
-  const { addToast, addMarketListing, marketListings, user } = useAppContext();
+  const { addToast, addMarketListing, marketListings, user, isMarketLive } = useAppContext();
   const { t } = useTranslations();
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
   const [newListing, setNewListing] = useState({ 
@@ -71,7 +114,12 @@ export const Market: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="heading-1">{t('market.title')}</h2>
+        <div>
+          <h2 className="heading-1">{t('market.title')}</h2>
+          <p className="text-muted" style={{ fontSize: '0.85rem' }}>
+            {isMarketLive ? 'Live listings sync every 30 seconds.' : 'Showing saved listings. Start the API server for live sync.'}
+          </p>
+        </div>
         <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: '8px', border: '1px solid var(--border)', padding: '4px' }}>
           <button className={`btn ${activeTab === 'buy' ? '' : 'btn-secondary'}`} style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: 'none', boxShadow: 'none' }} onClick={() => setActiveTab('buy')}>
             {t('market.buyerView')}
@@ -91,7 +139,7 @@ export const Market: React.FC = () => {
               <div className="grid-cols-2">
                 {myListings.map((item) => (
                   <div key={item.id} className="card" style={{ boxShadow: 'none' }}>
-                    <div style={{ height: '140px', borderRadius: '12px', marginBottom: '0.9rem', backgroundImage: `url(${item.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                    <MarketCardImage crop={item.crop} image={item.image} height="140px" />
                     <h4 style={{ fontWeight: 600, fontSize: '1.05rem', marginBottom: '0.5rem' }}>{item.crop}</h4>
                     <p className="text-muted" style={{ fontSize: '0.875rem' }}>{item.qty}</p>
                     <p style={{ fontWeight: 600, color: 'var(--primary)', margin: '0.4rem 0' }}>{item.price}</p>
@@ -105,7 +153,7 @@ export const Market: React.FC = () => {
           <div className="grid-cols-3">
             {marketListings.map((item) => (
               <div key={item.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-                <div style={{ height: '160px', borderRadius: '12px', marginBottom: '1rem', backgroundImage: `url(${item.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                <MarketCardImage crop={item.crop} image={item.image} height="160px" />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                   <div>
                     <h4 style={{ fontWeight: 600, fontSize: '1.1rem' }}>{item.crop}</h4>
