@@ -135,7 +135,7 @@ export const Market: React.FC = () => {
                   </button>
                 </div>
                 <button className="btn w-full" type="button" onClick={() => handlePlaceOrder(item)}>
-                  <Receipt size={16} /> {t('market.placeOrder') || 'Order Now'}
+                  <Receipt size={16} /> Place Order
                 </button>
               </div>
             ))}
