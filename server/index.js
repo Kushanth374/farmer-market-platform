@@ -1,8 +1,14 @@
 import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 import { getDatabase, getDatabaseFilePath, resetMarketListings, updateDatabase } from "./database.js";
 
 const app = express();
-const port = 3001;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, "..");
+const distDirectory = path.join(projectRoot, "dist");
+const port = Number(process.env.PORT || 3001);
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -543,6 +549,16 @@ app.put("/api/farmer/:id/profile", (req, res) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`FarmSetu API running on http://localhost:${port}`);
+app.use(express.static(distDirectory));
+
+app.get(/^(?!\/api).*/, (_req, res, next) => {
+  res.sendFile(path.join(distDirectory, "index.html"), (error) => {
+    if (error) {
+      next(error);
+    }
+  });
+});
+
+app.listen(port, "0.0.0.0", () => {
+  console.log(`FarmSetu app running on http://localhost:${port}`);
 });
