@@ -1,6 +1,14 @@
 {
   "version": 1,
   "accounts": {
+    "1231231": {
+      "name": "sharan",
+      "phone": "1231231",
+      "address": "Puttur",
+      "password": "s123",
+      "landSize": "5",
+      "primaryCrop": "Rice"
+    },
     "9999999999": {
       "name": "Test User",
       "phone": "9999999999",
@@ -23,6 +31,14 @@
       "address": "Puttur",
       "password": "j123",
       "landSize": "3",
+      "primaryCrop": "Sugarcane"
+    },
+    "+919449289304": {
+      "name": "Kushanth Gowda",
+      "phone": "+919449289304",
+      "address": "Sullia",
+      "password": "a123",
+      "landSize": "9",
       "primaryCrop": "Sugarcane"
     }
   },
@@ -91,5 +107,5 @@
     }
   ],
   "createdAt": "2026-04-12T00:00:00.000Z",
-  "updatedAt": "2026-04-12T11:09:51.013Z"
+  "updatedAt": "2026-04-13T07:52:32.032Z"
 }

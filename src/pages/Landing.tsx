@@ -1,10 +1,17 @@
-﻿import React from 'react';
-import { Link } from 'react-router-dom';
+﻿import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, Play, ShieldCheck, Tractor, TrendingUp, WalletCards } from 'lucide-react';
 import { useTranslations } from '../i18n';
+import { ParticlesLeaves } from '../components/ParticlesLeaves';
+import { ParticlesBubbles } from '../components/ParticlesBubbles';
+import { AppLoader } from '../components/AppLoader';
 
 export const Landing: React.FC = () => {
   const { t } = useTranslations();
+  const navigate = useNavigate();
+  const [isStartingNow, setIsStartingNow] = useState(false);
+  const heroImageUrl =
+    'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=2200&q=90';
 
   const heroPoints = [t('landing.point1'), t('landing.point2'), t('landing.point3')];
   const features = [
@@ -18,8 +25,22 @@ export const Landing: React.FC = () => {
     { value: t('landing.stat3Value'), label: t('landing.stat3Label') },
   ];
 
+  useEffect(() => {
+    if (!isStartingNow) return;
+    const timerId = window.setTimeout(() => navigate('/registration'), 1200);
+    return () => window.clearTimeout(timerId);
+  }, [isStartingNow, navigate]);
+
+  if (isStartingNow) {
+    return <AppLoader />;
+  }
+
   return (
     <div className="landing-page-pro">
+      <div className="landing-leaf-overlay" aria-hidden="true">
+        <ParticlesLeaves />
+        <ParticlesBubbles />
+      </div>
       <div className="landing-ambient landing-ambient-one" aria-hidden="true" />
       <div className="landing-ambient landing-ambient-two" aria-hidden="true" />
       <div className="landing-grid-overlay" aria-hidden="true" />
@@ -32,10 +53,10 @@ export const Landing: React.FC = () => {
       <header className="landing-topbar-pro">
         <Link to="/" className="landing-brand-pro">
           <span className="landing-brand-mark">
-            <Tractor size={22} />
+            <Tractor size={22} className="brand-tractor-icon" />
           </span>
           <span>
-            <strong>KisanHub</strong>
+            <strong>Kisan Bandhu</strong>
             <small>{t('brand.tagline')}</small>
           </span>
         </Link>
@@ -43,15 +64,15 @@ export const Landing: React.FC = () => {
         <nav className="landing-nav-pro">
           <a href="#features">{t('landing.featuresLink')}</a>
           <a href="#preview">{t('landing.previewLink')}</a>
-          <Link to="/registration" className="landing-nav-cta">
+          <button type="button" className="landing-nav-cta" onClick={() => setIsStartingNow(true)}>
             {t('landing.startNow')}
-          </Link>
+          </button>
         </nav>
       </header>
 
       <main className="landing-main-pro">
         <section className="hero-pro">
-          <div className="hero-copy-pro">
+          <div className="hero-copy-pro landing-reveal landing-reveal-1">
             <div className="hero-kicker">
               <span>{t('landing.kicker')}</span>
             </div>
@@ -85,8 +106,13 @@ export const Landing: React.FC = () => {
             </div>
           </div>
 
-          <div className="hero-visual-pro" id="preview">
-            <div className="hero-photo-panel">
+          <div className="hero-visual-pro landing-reveal landing-reveal-2" id="preview">
+            <div
+              className="hero-photo-panel"
+              style={{
+                backgroundImage: `linear-gradient(rgba(20, 48, 24, 0.14), rgba(20, 48, 24, 0.14)), url(${heroImageUrl})`,
+              }}
+            >
               <div className="hero-photo-overlay">
                 <p>{t('landing.overlayText')}</p>
                 <strong>{t('landing.overlayStrong')}</strong>
@@ -95,7 +121,7 @@ export const Landing: React.FC = () => {
           </div>
         </section>
 
-        <section className="trust-strip-pro">
+        <section className="trust-strip-pro landing-reveal landing-reveal-3">
           {stats.map((metric) => (
             <article key={metric.label}>
               <strong>{metric.value}</strong>
@@ -104,7 +130,7 @@ export const Landing: React.FC = () => {
           ))}
         </section>
 
-        <section className="section-pro" id="features">
+        <section className="section-pro landing-reveal landing-reveal-4" id="features">
           <div className="section-heading-pro">
             <p>{t('landing.sectionLabel')}</p>
             <h2>{t('landing.sectionTitle')}</h2>
@@ -123,7 +149,7 @@ export const Landing: React.FC = () => {
           </div>
         </section>
 
-        <section className="section-pro split-section-pro">
+        <section className="section-pro split-section-pro landing-reveal landing-reveal-5">
           <div className="story-card-pro image-story-card">
             <p className="story-label">{t('landing.storyLabel')}</p>
             <h2>{t('landing.storyTitle')}</h2>
@@ -131,11 +157,11 @@ export const Landing: React.FC = () => {
           </div>
 
           <div className="stats-card-pro">
-            <div className="secondary-photo-panel" />
+            <div className="secondary-photo-panel" style={{ backgroundImage: `linear-gradient(rgba(28, 57, 26, 0.12), rgba(28, 57, 26, 0.12)), url(${heroImageUrl})` }} />
           </div>
         </section>
 
-        <section className="cta-panel-pro">
+        <section className="cta-panel-pro landing-reveal landing-reveal-6">
           <div>
             <p>{t('landing.ready')}</p>
             <h2>{t('landing.ctaTitle')}</h2>

@@ -11,8 +11,8 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', borderBottom: '1px solid var(--border)' }}>
-        <Tractor color="var(--primary)" size={32} />
-        <h1 className="heading-1" style={{ fontSize: '1.25rem', marginBottom: 0 }}>KisanHub</h1>
+        <Tractor color="var(--primary)" size={32} className="brand-tractor-icon" />
+        <h1 className="heading-1 sidebar-brand-title" style={{ marginBottom: 0 }}>Kisan Bandhu</h1>
       </div>
 
       <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)' }}>
@@ -25,6 +25,10 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
           <NavLink to="/registration" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={onClose}>
             <UserCircle size={20} />
             {t('nav.registration')}
+          </NavLink>
+          <NavLink to="/login" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={onClose}>
+            <UserCircle size={20} />
+            {t('nav.login')}
           </NavLink>
           <NavLink to="/schemes" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={onClose}>
             <Sprout size={20} />

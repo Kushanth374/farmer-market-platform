@@ -210,9 +210,20 @@ export const Schemes: React.FC = () => {
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [activeTab, setActiveTab] = useState<'schemes' | 'loans'>('loans');
 
+  // Reset user-linked loan feed when account changes
+  useEffect(() => {
+    setLoanProducts(BASE_LOAN_PRODUCTS);
+    setSeenListingIds(new Set([1, 2, 3]));
+    setLastUpdated(new Date());
+  }, [user?.phone]);
+
   // ── Auto-detect new market listings & add linked loans ────────────────
   useEffect(() => {
-    const newListings = marketListings.filter((l) => !seenListingIds.has(l.id));
+    if (!user) return;
+
+    const newListings = marketListings.filter(
+      (l) => !seenListingIds.has(l.id) && l.ownerPhone === user.phone
+    );
     if (newListings.length === 0) return;
 
     const newLoans = newListings.map((listing) =>
@@ -226,7 +237,7 @@ export const Schemes: React.FC = () => {
       return updated;
     });
     setLastUpdated(new Date());
-  }, [marketListings]);
+  }, [marketListings, seenListingIds, user]);
 
   // ── EMI Calculator ────────────────────────────────────────────────────
   const interestRate = 4.0;
@@ -263,6 +274,7 @@ export const Schemes: React.FC = () => {
   };
 
   const eligibility = getLoanEligibility(user);
+  const eligibilityDegrees = Math.max(0, Math.min(360, eligibility.score * 3.6));
 
   return (
     <div className="max-w-4xl mx-auto pb-12">
@@ -272,10 +284,10 @@ export const Schemes: React.FC = () => {
           <h2 className="heading-1">{t('schemes.title')}</h2>
           <div className="flex items-center gap-2 mt-1">
             <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 bg-green-100 text-green-700 rounded-full animate-pulse">
-              ● LIVE
+              {t('schemes.live')}
             </span>
             <span className="text-muted" style={{ fontSize: '0.8rem' }}>
-              Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {t('schemes.updatedAt', { time: lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
             </span>
           </div>
         </div>
@@ -291,14 +303,14 @@ export const Schemes: React.FC = () => {
           style={{ padding: '0.5rem 1.5rem', borderRadius: '6px', border: 'none', boxShadow: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
           onClick={() => setActiveTab('loans')}
         >
-          <Landmark size={16} /> Loan Applications
+          <Landmark size={16} /> {t('schemes.loanApplications')}
         </button>
         <button
           className={`btn ${activeTab === 'schemes' ? '' : 'btn-secondary'}`}
           style={{ padding: '0.5rem 1.5rem', borderRadius: '6px', border: 'none', boxShadow: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
           onClick={() => setActiveTab('schemes')}
         >
-          <Award size={16} /> Govt Schemes
+          <Award size={16} /> {t('schemes.govtSchemes')}
         </button>
       </div>
 
@@ -309,9 +321,9 @@ export const Schemes: React.FC = () => {
           <div className="space-y-4" style={{ gridColumn: '1 / 2' }}>
             <div className="flex items-center gap-2 mb-2">
               <Landmark size={20} style={{ color: 'var(--primary)' }} />
-              <h3 className="font-bold text-lg">Available Loan Schemes</h3>
+              <h3 className="font-bold text-lg">{t('schemes.availableLoanSchemes')}</h3>
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                {loanProducts.length} Active
+                {t('schemes.activeCount', { count: loanProducts.length })}
               </span>
             </div>
 
@@ -369,21 +381,21 @@ export const Schemes: React.FC = () => {
                   }}
                 >
                   <div>
-                    <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Interest</p>
+                    <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>{t('schemes.loanInterest')}</p>
                     <p style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--primary)' }}>{loan.interestRate}</p>
                   </div>
                   <div>
-                    <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Max Amount</p>
+                    <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>{t('schemes.maxAmount')}</p>
                     <p style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)' }}>{loan.maxAmount}</p>
                   </div>
                   <div>
-                    <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Tenure</p>
+                    <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>{t('schemes.tenure')}</p>
                     <p style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-main)' }}>{loan.tenure}</p>
                   </div>
                 </div>
 
                 <p className="text-muted" style={{ fontSize: '0.82rem', marginBottom: '0.75rem' }}>
-                  <strong>Purpose:</strong> {loan.purpose}
+                  <strong>{t('schemes.purpose')}</strong> {loan.purpose}
                 </p>
 
                 <div className="space-y-1 mb-4">
@@ -400,7 +412,7 @@ export const Schemes: React.FC = () => {
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                   onClick={() => window.open(loan.applyLink, '_blank')}
                 >
-                  Apply Online <ExternalLink size={14} />
+                  {t('schemes.applyOnline')} <ExternalLink size={14} />
                 </button>
               </div>
             ))}
@@ -421,9 +433,19 @@ export const Schemes: React.FC = () => {
                 <p className="text-xs font-bold text-stone-500 uppercase tracking-widest mb-1">
                   {t('schemes.probability')}
                 </p>
-                <div className="flex items-center justify-center gap-2">
+                <div className="eligibility-gauge-wrap">
                   <div
-                    className={`text-3xl font-black ${
+                    className="eligibility-gauge"
+                    style={{
+                      background: `conic-gradient(var(--primary) ${eligibilityDegrees}deg, rgba(42,79,51,0.14) ${eligibilityDegrees}deg 360deg)`,
+                    }}
+                  >
+                    <div className="eligibility-gauge-center">
+                      <span>{eligibility.score}%</span>
+                    </div>
+                  </div>
+                  <div
+                    className={`text-xl font-black ${
                       eligibility.status === 'high'
                         ? 'text-green-600'
                         : eligibility.status === 'medium'
@@ -433,23 +455,21 @@ export const Schemes: React.FC = () => {
                   >
                     {t(`schemes.${eligibility.status}`).toUpperCase()}
                   </div>
-                  <div className="text-stone-400 text-2xl font-light">/</div>
-                  <div className="text-stone-700 text-2xl font-bold">{eligibility.score}%</div>
                 </div>
               </div>
 
               <ul className="space-y-3">
                 <li className="flex items-start gap-3 text-sm">
                   <CheckCircle size={16} className={user ? 'text-green-500 shrink-0 mt-0.5' : 'text-stone-300 shrink-0 mt-0.5'} />
-                  <span className={user ? 'text-stone-700' : 'text-stone-400'}>Farmer Profile Registered</span>
+                  <span className={user ? 'text-stone-700' : 'text-stone-400'}>{t('schemes.profileRegistered')}</span>
                 </li>
                 <li className="flex items-start gap-3 text-sm">
                   <CheckCircle size={16} className={user?.primaryCrop ? 'text-green-500 shrink-0 mt-0.5' : 'text-stone-300 shrink-0 mt-0.5'} />
-                  <span className={user?.primaryCrop ? 'text-stone-700' : 'text-stone-400'}>Primary Crop Added</span>
+                  <span className={user?.primaryCrop ? 'text-stone-700' : 'text-stone-400'}>{t('schemes.primaryCropAdded')}</span>
                 </li>
                 <li className="flex items-start gap-3 text-sm">
                   <CheckCircle size={16} className={user && parseFloat(user.landSize) > 0 ? 'text-green-500 shrink-0 mt-0.5' : 'text-stone-300 shrink-0 mt-0.5'} />
-                  <span className={user && parseFloat(user.landSize) > 0 ? 'text-stone-700' : 'text-stone-400'}>Land Size Verified</span>
+                  <span className={user && parseFloat(user.landSize) > 0 ? 'text-stone-700' : 'text-stone-400'}>{t('schemes.landSizeVerified')}</span>
                 </li>
               </ul>
             </div>
@@ -532,7 +552,7 @@ export const Schemes: React.FC = () => {
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-2">
               <Award size={20} style={{ color: 'var(--primary)' }} />
-              <h3 className="font-bold text-lg">Government Schemes</h3>
+              <h3 className="font-bold text-lg">{t('schemes.governmentSchemes')}</h3>
             </div>
 
             {SCHEMES_DATABASE.map((scheme) => {
@@ -614,26 +634,34 @@ export const Schemes: React.FC = () => {
               </div>
               <div className="text-center py-4 bg-stone-50 rounded-2xl border border-stone-100 mb-4">
                 <p className="text-xs font-bold text-stone-500 uppercase tracking-widest mb-1">{t('schemes.probability')}</p>
-                <div className="flex items-center justify-center gap-2">
-                  <div className={`text-3xl font-black ${eligibility.status === 'high' ? 'text-green-600' : eligibility.status === 'medium' ? 'text-blue-600' : 'text-amber-600'}`}>
+                <div className="eligibility-gauge-wrap">
+                  <div
+                    className="eligibility-gauge"
+                    style={{
+                      background: `conic-gradient(var(--primary) ${eligibilityDegrees}deg, rgba(42,79,51,0.14) ${eligibilityDegrees}deg 360deg)`,
+                    }}
+                  >
+                    <div className="eligibility-gauge-center">
+                      <span>{eligibility.score}%</span>
+                    </div>
+                  </div>
+                  <div className={`text-xl font-black ${eligibility.status === 'high' ? 'text-green-600' : eligibility.status === 'medium' ? 'text-blue-600' : 'text-amber-600'}`}>
                     {t(`schemes.${eligibility.status}`).toUpperCase()}
                   </div>
-                  <div className="text-stone-400 text-2xl font-light">/</div>
-                  <div className="text-stone-700 text-2xl font-bold">{eligibility.score}%</div>
                 </div>
               </div>
               <ul className="space-y-3">
                 <li className="flex items-start gap-3 text-sm">
                   <CheckCircle size={16} className={user ? 'text-green-500 shrink-0 mt-0.5' : 'text-stone-300 shrink-0 mt-0.5'} />
-                  <span className={user ? 'text-stone-700' : 'text-stone-400'}>Farmer Profile Registered</span>
+                  <span className={user ? 'text-stone-700' : 'text-stone-400'}>{t('schemes.profileRegistered')}</span>
                 </li>
                 <li className="flex items-start gap-3 text-sm">
                   <CheckCircle size={16} className={user?.primaryCrop ? 'text-green-500 shrink-0 mt-0.5' : 'text-stone-300 shrink-0 mt-0.5'} />
-                  <span className={user?.primaryCrop ? 'text-stone-700' : 'text-stone-400'}>Primary Crop Added</span>
+                  <span className={user?.primaryCrop ? 'text-stone-700' : 'text-stone-400'}>{t('schemes.primaryCropAdded')}</span>
                 </li>
                 <li className="flex items-start gap-3 text-sm">
                   <CheckCircle size={16} className={user && parseFloat(user.landSize) > 0 ? 'text-green-500 shrink-0 mt-0.5' : 'text-stone-300 shrink-0 mt-0.5'} />
-                  <span className={user && parseFloat(user.landSize) > 0 ? 'text-stone-700' : 'text-stone-400'}>Land Size Verified</span>
+                  <span className={user && parseFloat(user.landSize) > 0 ? 'text-stone-700' : 'text-stone-400'}>{t('schemes.landSizeVerified')}</span>
                 </li>
               </ul>
             </div>

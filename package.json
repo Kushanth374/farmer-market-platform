@@ -11,6 +11,8 @@
     "start": "node server/index.js"
   },
   "dependencies": {
+    "@tsparticles/react": "^3.0.0",
+    "@tsparticles/slim": "^3.9.1",
     "express": "^4.21.2",
     "html2canvas": "^1.4.1",
     "html2pdf.js": "^0.14.0",

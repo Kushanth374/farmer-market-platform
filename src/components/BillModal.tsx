@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { X, Download, MapPin } from 'lucide-react';
 import { MarketListing, User as UserType, useAppContext } from '../context/AppContext';
+import { useTranslations } from '../i18n';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -30,6 +31,7 @@ const numberToWords = (num: number): string => {
 
 export const BillModal: React.FC<BillModalProps> = ({ listing, customer, onClose }) => {
   const { accounts } = useAppContext();
+  const { t } = useTranslations();
   const billRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const today = new Date().toLocaleDateString('en-GB');
@@ -126,10 +128,10 @@ export const BillModal: React.FC<BillModalProps> = ({ listing, customer, onClose
       }
 
       // Use jsPDF native save to ensure proper .pdf file type and filename.
-      pdf.save(`KisanHub_Invoice_${orderNumber}.pdf`);
+      pdf.save(`Kisan_Bandhu_Invoice_${orderNumber}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('Failed to generate PDF. Please use the Print option as a workaround.');
+      alert(t('bill.pdfFailed'));
     } finally {
       setIsDownloading(false);
     }
@@ -168,40 +170,40 @@ export const BillModal: React.FC<BillModalProps> = ({ listing, customer, onClose
                 <p>e-mail : support@mfi.co.in, Ph. 0824-2456789</p>
                 <p>State Name : Karnataka, State Code : KA</p>
               </div>
-              <div className="tax-invoice-badge">Invoice</div>
+              <div className="tax-invoice-badge">{t('bill.invoice')}</div>
             </div>
 
             <div className="invoice-info-grid">
               <div className="info-box">
                 <div className="info-row">
-                  <span className="info-label">Client Name</span>
+                  <span className="info-label">{t('bill.clientName')}</span>
                   <span className="info-value">: {customer.name}</span>
                 </div>
                 <div className="info-row">
-                  <span className="info-label">Address</span>
+                  <span className="info-label">{t('bill.address')}</span>
                   <span className="info-value">: {customer.address}</span>
                 </div>
               </div>
               <div className="info-box">
                 <div className="info-row">
-                  <span className="info-label">Date</span>
+                  <span className="info-label">{t('bill.date')}</span>
                   <span className="info-value">: {today}</span>
                 </div>
                 <div className="info-row">
-                  <span className="info-label">Invoice No</span>
+                  <span className="info-label">{t('bill.invoiceNo')}</span>
                   <span className="info-value">: {invoiceNo}</span>
                 </div>
               </div>
             </div>
 
             <div className="delivery-address">
-              <div style={{ fontWeight: 800, textDecoration: 'underline', marginBottom: '0.5rem' }}>Delivery Address:</div>
+              <div style={{ fontWeight: 800, textDecoration: 'underline', marginBottom: '0.5rem' }}>{t('bill.deliveryAddress')}</div>
               <div className="info-row">
-                <span className="info-label" style={{ width: '120px' }}>Client Name</span>
+                <span className="info-label" style={{ width: '120px' }}>{t('bill.clientName')}</span>
                 <span className="info-value">: {customer.name}</span>
               </div>
               <div className="info-row">
-                <span className="info-label" style={{ width: '120px' }}>Address</span>
+                <span className="info-label" style={{ width: '120px' }}>{t('bill.address')}</span>
                 <span className="info-value">: {customer.address}</span>
               </div>
               <div style={{ position: 'absolute', right: '3.5rem', top: '12.5rem' }}>
@@ -242,12 +244,12 @@ export const BillModal: React.FC<BillModalProps> = ({ listing, customer, onClose
 
             <div className="footer-total-section">
               <div className="amount-in-words">
-                <div style={{ fontWeight: 800, marginBottom: '0.5rem' }}>Amount in Words:</div>
+                <div style={{ fontWeight: 800, marginBottom: '0.5rem' }}>{t('bill.amountInWords')}</div>
                 <div style={{ fontWeight: 600 }}>{numberToWords(numericPriceTotal)}</div>
               </div>
               <div className="totals-grid">
                 <div className="grand-total-row">
-                  <div className="grand-total-label">Grand Total</div>
+                  <div className="grand-total-label">{t('bill.grandTotal')}</div>
                   <div className="grand-total-value">₹ {numericPriceTotal.toLocaleString('en-IN')}.00</div>
                 </div>
               </div>
@@ -256,7 +258,7 @@ export const BillModal: React.FC<BillModalProps> = ({ listing, customer, onClose
             <div className="no-print" style={{ marginTop: '2.5rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
               <div className="flex items-center gap-2 mb-4" style={{ color: 'var(--primary)', fontWeight: 700 }}>
                 <MapPin size={20} />
-                <span>Seller Location Tracker</span>
+                <span>{t('bill.sellerLocationTracker')}</span>
               </div>
               <div style={{ width: '100%', height: '250px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
                 <iframe
@@ -270,17 +272,17 @@ export const BillModal: React.FC<BillModalProps> = ({ listing, customer, onClose
                 />
               </div>
               <p style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#64748b' }}>
-                Showing pickup location for: <strong>{sellerAddress}</strong>
+                {t('bill.pickupLocationFor')} <strong>{sellerAddress}</strong>
               </p>
             </div>
 
             <div className="signature-section" style={{ marginTop: '3rem' }}>
               <div style={{ fontStyle: 'italic', fontSize: '0.7rem' }}>
-                * This is a computer generated invoice
+                {t('bill.computerGenerated')}
               </div>
               <div className="signature-box">
                 <p>For MANGALORE FARMING INDUSTRY</p>
-                <div className="auth-sign-text">Authorised Signature</div>
+                <div className="auth-sign-text">{t('bill.authorisedSignature')}</div>
               </div>
             </div>
           </div>
@@ -288,10 +290,10 @@ export const BillModal: React.FC<BillModalProps> = ({ listing, customer, onClose
 
         <div className="no-print" style={{ padding: '1.5rem 3rem 2.5rem', display: 'flex', gap: '1rem', background: '#f8fafc' }}>
           <button className="btn" style={{ flex: 2 }} onClick={handleDownloadPDF} disabled={isDownloading}>
-            <Download size={16} /> {isDownloading ? 'Generating PDF...' : 'Download Bill PDF'}
+            <Download size={16} /> {isDownloading ? t('bill.generatingPdf') : t('bill.downloadPdf')}
           </button>
           <button className="btn btn-secondary" onClick={onClose}>
-            Close
+            {t('bill.close')}
           </button>
         </div>
       </div>

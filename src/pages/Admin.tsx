@@ -63,7 +63,7 @@ export const Admin: React.FC = () => {
     if (!editingPhone || !accountDraft) return;
     const success = await updateAccount(editingPhone, accountDraft);
     if (!success) {
-      addToast('Failed to update account', 'error');
+      addToast(t('admin.toastAccountUpdateFailed'), 'error');
       return;
     }
     addToast(t('admin.toastAccountUpdated'), 'success');
@@ -225,7 +225,7 @@ export const Admin: React.FC = () => {
                             if (!window.confirm(t('admin.confirmDeleteAccount', { name: account.name }))) return;
                             const success = await removeAccount(account.phone);
                             if (!success) {
-                              addToast('Failed to remove account', 'error');
+                              addToast(t('admin.toastAccountRemoveFailed'), 'error');
                               return;
                             }
                             addToast(t('admin.toastAccountRemoved'), 'warning');

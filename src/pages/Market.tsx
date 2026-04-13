@@ -73,7 +73,7 @@ export const Market: React.FC = () => {
       return;
     }
 
-    const message = encodeURIComponent(`Hello, I am interested in your ${crop} listing on KisanHub.`);
+    const message = encodeURIComponent(`Hello, I am interested in your ${crop} listing on Kisan Bandhu.`);
     window.open(`https://wa.me/${digits}?text=${message}`, '_blank');
   };
 
@@ -121,7 +121,7 @@ export const Market: React.FC = () => {
         <div>
           <h2 className="heading-1">{t('market.title')}</h2>
           <p className="text-muted" style={{ fontSize: '0.85rem' }}>
-            {isMarketLive ? 'Live listings sync every 30 seconds.' : 'Showing saved listings. Start the API server for live sync.'}
+            {isMarketLive ? t('market.liveSync') : t('market.offlineSync')}
           </p>
         </div>
         <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: '8px', border: '1px solid var(--border)', padding: '4px' }}>

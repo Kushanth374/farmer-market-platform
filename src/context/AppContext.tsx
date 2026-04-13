@@ -60,10 +60,14 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const SESSION_KEY = 'kisanhub_current_phone';
-const ADMIN_SESSION_KEY = 'kisanhub_admin_session';
-const LISTINGS_KEY = 'kisanhub_market_listings';
-const LANGUAGE_KEY = 'kisanhub_language';
+const LEGACY_SESSION_KEY = 'kisanhub_current_phone';
+const LEGACY_ADMIN_SESSION_KEY = 'kisanhub_admin_session';
+const LEGACY_LISTINGS_KEY = 'kisanhub_market_listings';
+const LEGACY_LANGUAGE_KEY = 'kisanhub_language';
+const SESSION_KEY = 'harvestlink_current_phone';
+const ADMIN_SESSION_KEY = 'harvestlink_admin_session';
+const LISTINGS_KEY = 'harvestlink_market_listings';
+const LANGUAGE_KEY = 'harvestlink_language';
 const ADMIN_PIN = 'admin@123';
 
 const cropImageMap: Record<string, string> = {
@@ -151,10 +155,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   useEffect(() => {
-    const savedSessionPhone = window.localStorage.getItem(SESSION_KEY);
-    const savedListings = window.localStorage.getItem(LISTINGS_KEY);
-    const savedAdminSession = window.localStorage.getItem(ADMIN_SESSION_KEY);
-    const savedLanguage = window.localStorage.getItem(LANGUAGE_KEY) as LanguageCode | null;
+    const savedSessionPhone = window.localStorage.getItem(SESSION_KEY) ?? window.localStorage.getItem(LEGACY_SESSION_KEY);
+    const savedListings = window.localStorage.getItem(LISTINGS_KEY) ?? window.localStorage.getItem(LEGACY_LISTINGS_KEY);
+    const savedAdminSession = window.localStorage.getItem(ADMIN_SESSION_KEY) ?? window.localStorage.getItem(LEGACY_ADMIN_SESSION_KEY);
+    const savedLanguage = (window.localStorage.getItem(LANGUAGE_KEY) ?? window.localStorage.getItem(LEGACY_LANGUAGE_KEY)) as LanguageCode | null;
 
     if (savedListings) {
       // Migrate old listings that were saved before the 'address' field was added
@@ -170,12 +174,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       window.localStorage.setItem(LISTINGS_KEY, JSON.stringify(migratedListings));
     }
 
+    if (savedSessionPhone) {
+      window.localStorage.setItem(SESSION_KEY, savedSessionPhone);
+    }
+
     if (savedLanguage) {
       setLanguageState(savedLanguage);
+      window.localStorage.setItem(LANGUAGE_KEY, savedLanguage);
     }
 
     if (savedAdminSession === 'true') {
       setIsAdmin(true);
+      window.localStorage.setItem(ADMIN_SESSION_KEY, 'true');
     }
 
     void syncAccounts(savedSessionPhone);

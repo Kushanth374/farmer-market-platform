@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { Save, User, Map, Leaf, LogIn, ArrowRight } from 'lucide-react';
+import { Save, User, Map, Leaf, ArrowRight, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslations } from '../i18n';
 
 export const Registration: React.FC = () => {
-  const { user, registerUser, accessAccount, addToast } = useAppContext();
+  const { user, registerUser, addToast } = useAppContext();
   const { t, translateCrop } = useTranslations();
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
-  const [isAccessing, setIsAccessing] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || '',
     phone: user?.phone || '',
@@ -18,8 +17,6 @@ export const Registration: React.FC = () => {
     landSize: user?.landSize || '',
     primaryCrop: user?.primaryCrop || '',
   });
-  const [accessPhone, setAccessPhone] = useState('');
-  const [accessPassword, setAccessPassword] = useState('');
 
   useEffect(() => {
     setFormData({
@@ -41,36 +38,9 @@ export const Registration: React.FC = () => {
       navigate('/market');
     } catch (error) {
       console.error('Failed to save registration:', error);
-      addToast('Registration could not be saved. Please try again.', 'error');
+      addToast(t('toast.registrationSaveFailed'), 'error');
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleAccessAccount = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsAccessing(true);
-
-    try {
-      const result = await accessAccount(accessPhone, accessPassword);
-    
-      if (result === 'success') {
-        addToast(t('toast.welcomeBack'), 'success');
-        navigate('/market');
-        return;
-      }
-
-      if (result === 'invalid_password') {
-        addToast(t('toast.invalidPassword') || 'Invalid password', 'error');
-        return;
-      }
-
-      addToast(t('toast.accountNotFound'), 'warning');
-    } catch (error) {
-      console.error('Failed to access account:', error);
-      addToast('Unable to access account right now. Please try again.', 'error');
-    } finally {
-      setIsAccessing(false);
     }
   };
 
@@ -100,7 +70,7 @@ export const Registration: React.FC = () => {
           <div className="card">
             <div className="flex items-center gap-2 mb-6" style={{ color: 'var(--primary)' }}>
               <Leaf />
-              <h3 className="heading-1" style={{ fontSize: '1.25rem', margin: 0, color: 'var(--text-main)' }}>{t('registration.status')}</h3>
+            <h3 className="heading-1" style={{ fontSize: '1.25rem', margin: 0, color: 'var(--text-main)' }}>{t('registration.status')}</h3>
             </div>
 
             <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
@@ -112,6 +82,9 @@ export const Registration: React.FC = () => {
               </h4>
               <p className="text-muted">{t('registration.accountReadyText')}</p>
             </div>
+            <button type="button" className="btn btn-secondary w-full mt-2 registration-login-cta" onClick={() => navigate('/login')}>
+              <LogIn size={18} /> {t('registration.goToLogin')}
+            </button>
           </div>
         </div>
       </div>
@@ -184,7 +157,7 @@ export const Registration: React.FC = () => {
             </div>
 
             <button type="submit" className="btn w-full" disabled={isSaving}>
-              <Save size={18} /> {isSaving ? 'Saving...' : t('registration.save')}
+              <Save size={18} /> {isSaving ? t('registration.saving') : t('registration.save')}
             </button>
           </form>
         </div>
@@ -192,7 +165,7 @@ export const Registration: React.FC = () => {
         <div className="card">
           <div className="flex items-center gap-2 mb-6" style={{ color: 'var(--primary)' }}>
             <Leaf />
-            <h3 className="heading-1" style={{ fontSize: '1.25rem', margin: 0, color: 'var(--text-main)' }}>{t('registration.accessTitle')}</h3>
+            <h3 className="heading-1" style={{ fontSize: '1.25rem', margin: 0, color: 'var(--text-main)' }}>{t('registration.onlyOnce')}</h3>
           </div>
 
           <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
@@ -205,26 +178,9 @@ export const Registration: React.FC = () => {
             <p className="text-muted" style={{ marginBottom: '1.5rem' }}>
               {t('registration.onlyOnceText')}
             </p>
-            <form onSubmit={handleAccessAccount} style={{ textAlign: 'left' }}>
-              <div className="input-group">
-                <label className="input-label">{t('registration.phone')}</label>
-                <input type="tel" className="input-field" value={accessPhone} onChange={(e) => setAccessPhone(e.target.value)} placeholder="+91" required />
-              </div>
-              <div className="input-group">
-                <label className="input-label">{t('registration.password')}</label>
-                <input 
-                  type="password" 
-                  className="input-field" 
-                  value={accessPassword} 
-                  onChange={(e) => setAccessPassword(e.target.value)} 
-                  placeholder={t('registration.passwordPlaceholder')} 
-                  required 
-                />
-              </div>
-              <button type="submit" className="btn btn-secondary w-full" disabled={isAccessing}>
-                <LogIn size={18} /> {isAccessing ? 'Checking...' : t('registration.access')}
-              </button>
-            </form>
+            <button type="button" className="btn btn-secondary w-full registration-login-cta" onClick={() => navigate('/login')}>
+              <LogIn size={18} /> {t('registration.goToLogin')}
+            </button>
           </div>
         </div>
       </div>
