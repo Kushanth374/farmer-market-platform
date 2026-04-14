@@ -3,6 +3,8 @@ import { ShoppingBag, Star, TrendingUp, Tags, Receipt } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { useTranslations } from '../i18n';
 import { BillModal } from '../components/BillModal';
+import { UPIMarketModal } from '../components/UPIMarketModal';
+
 import sugarcaneImage from '../assets/sugarcane-botanical.webp';
 
 const marketFallbackImages: Record<string, string> = {
@@ -48,7 +50,7 @@ const MarketCardImage: React.FC<{ crop: string; image?: string; height: string }
 };
 
 export const Market: React.FC = () => {
-  const { addToast, addMarketListing, marketListings, user, isMarketLive, refreshMarketListings } = useAppContext();
+  const { addToast, addMarketListing, marketListings, user, isMarketLive, refreshMarketListings, createOrder, accounts } = useAppContext();
   const { t } = useTranslations();
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
   const [newListing, setNewListing] = useState({ 
@@ -58,6 +60,9 @@ export const Market: React.FC = () => {
     details: '' 
   });
   const [selectedForBill, setSelectedForBill] = useState<any>(null);
+  const [showUPIModal, setShowUPIModal] = useState<any>(null);
+  const [selectedQty, setSelectedQty] = useState<string>('');
+  const [razorpayPaymentId, setRazorpayPaymentId] = useState<string | undefined>(undefined);
   const myListings = user ? marketListings.filter((item) => item.ownerPhone === user.phone) : [];
 
   useEffect(() => {
@@ -111,8 +116,34 @@ export const Market: React.FC = () => {
       addToast(t('toast.registerFirst'), 'warning');
       return;
     }
+    setShowUPIModal(listing);
+  };
+
+  const handlePaymentSuccess = (listing: any, txId: string, quantity: string) => {
+    setRazorpayPaymentId(txId);
+    setSelectedQty(quantity);
     setSelectedForBill(listing);
-    addToast(t('toast.orderPlaced') || 'Order placed successfully!', 'success');
+    setShowUPIModal(null);
+
+    if (user) {
+      const unitPrice = parseInt(String(listing.price || '').replace(/[^0-9]/g, '')) || 0;
+      const qtyNumeric = parseInt(String(quantity || '').replace(/[^0-9]/g, '')) || 1;
+      const totalPrice = unitPrice * qtyNumeric;
+      const seller = accounts[String(listing.ownerPhone || '').trim()];
+
+      void createOrder({
+        buyerPhone: user.phone,
+        sellerPhone: String(listing.ownerPhone || '').trim(),
+        listingId: listing.id ?? null,
+        crop: String(listing.crop || '').trim(),
+        qty: String(quantity || '').trim(),
+        unitPrice,
+        totalPrice,
+        txId,
+        sellerName: String(listing.farmer || seller?.name || '').trim(),
+        sellerAddress: String(listing.address || seller?.address || '').trim(),
+      });
+    }
   };
 
   return (
@@ -235,11 +266,25 @@ export const Market: React.FC = () => {
         </div>
       )}
 
+      {showUPIModal && (
+        <UPIMarketModal 
+          listing={showUPIModal}
+          onClose={() => setShowUPIModal(null)}
+          onSuccess={(txId, quantity) => handlePaymentSuccess(showUPIModal, txId, quantity)}
+        />
+      )}
+
       {selectedForBill && user && (
         <BillModal 
           listing={selectedForBill} 
-          customer={user} 
-          onClose={() => setSelectedForBill(null)} 
+          customer={user}
+          selectedQty={selectedQty}
+          razorpayPaymentId={razorpayPaymentId}
+          onClose={() => {
+            setSelectedForBill(null);
+            setRazorpayPaymentId(undefined);
+            setSelectedQty('');
+          }}
         />
       )}
     </div>

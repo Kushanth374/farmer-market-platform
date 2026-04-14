@@ -151,6 +151,28 @@ function getBuyers() {
   return getDatabase().buyers;
 }
 
+function getOrders() {
+  return getDatabase().orders || [];
+}
+
+function normalizeOrder(order) {
+  return {
+    id: Number(order.id),
+    buyerPhone: String(order.buyerPhone || "").trim(),
+    sellerPhone: String(order.sellerPhone || "").trim(),
+    listingId: order.listingId == null ? null : Number(order.listingId),
+    crop: String(order.crop || "").trim(),
+    qty: String(order.qty || "").trim(),
+    unitPrice: Number(order.unitPrice || 0),
+    totalPrice: Number(order.totalPrice || 0),
+    txId: String(order.txId || "").trim(),
+    sellerName: String(order.sellerName || "").trim(),
+    sellerAddress: String(order.sellerAddress || "").trim(),
+    status: String(order.status || "paid"),
+    createdAt: order.createdAt ? new Date(order.createdAt).toISOString() : new Date().toISOString(),
+  };
+}
+
 function createEmptyProfile(name = "Farmer") {
   return {
     name,
@@ -367,6 +389,53 @@ app.get("/api/accounts", (_req, res) => {
     databaseFile: getDatabaseFilePath(),
     lastUpdated: getDatabase().updatedAt,
   });
+});
+
+app.get("/api/orders", (req, res) => {
+  const buyerPhone = String(req.query.buyerPhone || "").trim();
+  const sellerPhone = String(req.query.sellerPhone || "").trim();
+  let orders = getOrders().map(normalizeOrder);
+
+  if (buyerPhone) {
+    orders = orders.filter((o) => o.buyerPhone === buyerPhone);
+  }
+
+  if (sellerPhone) {
+    orders = orders.filter((o) => o.sellerPhone === sellerPhone);
+  }
+
+  orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  res.json({ orders, lastUpdated: getDatabase().updatedAt });
+});
+
+app.post("/api/orders", (req, res) => {
+  const { buyerPhone, sellerPhone, listingId, crop, qty, unitPrice, totalPrice, txId, sellerName, sellerAddress } = req.body || {};
+
+  if (!buyerPhone || !sellerPhone || !crop || !qty || !txId) {
+    return res.status(400).json({ message: "buyerPhone, sellerPhone, crop, qty and txId are required" });
+  }
+
+  const nextOrder = normalizeOrder({
+    id: Date.now(),
+    buyerPhone,
+    sellerPhone,
+    listingId: listingId ?? null,
+    crop,
+    qty,
+    unitPrice,
+    totalPrice,
+    txId,
+    sellerName,
+    sellerAddress,
+    status: "paid",
+    createdAt: new Date().toISOString(),
+  });
+
+  updateDatabase((db) => {
+    db.orders = [nextOrder, ...(db.orders || [])];
+  });
+
+  res.status(201).json({ order: nextOrder });
 });
 
 app.post("/api/accounts/register", (req, res) => {

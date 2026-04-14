@@ -1,6 +1,6 @@
-﻿import React from 'react';
+import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Tractor, Sprout, Store, BarChart3, UserCircle, LogOut, Shield } from 'lucide-react';
+import { Tractor, Sprout, Store, BarChart3, UserCircle, LogOut, Shield, Package } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { LANGUAGE_OPTIONS, useTranslations } from '../i18n';
 
@@ -26,10 +26,6 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
             <UserCircle size={20} />
             {t('nav.registration')}
           </NavLink>
-          <NavLink to="/login" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={onClose}>
-            <UserCircle size={20} />
-            {t('nav.login')}
-          </NavLink>
           <NavLink to="/schemes" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={onClose}>
             <Sprout size={20} />
             {t('nav.schemes')}
@@ -38,16 +34,14 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
             <Store size={20} />
             {t('nav.market')}
           </NavLink>
+          <NavLink to="/orders" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={onClose}>
+            <Package size={20} />
+            My Orders
+          </NavLink>
           <NavLink to="/dashboard" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={onClose}>
             <BarChart3 size={20} />
             {t('nav.dashboardLong')}
           </NavLink>
-          {isAdmin && (
-            <NavLink to="/admin" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={onClose}>
-              <Shield size={20} />
-              {t('nav.admin')}
-            </NavLink>
-          )}
         </div>
       </div>
 

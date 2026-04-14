@@ -11,9 +11,11 @@ import { Market } from './pages/Market';
 import { Dashboard } from './pages/Dashboard';
 import { Admin } from './pages/Admin';
 import { AdminLogin } from './pages/AdminLogin';
+import { Orders } from './pages/Orders';
 import { useTranslations } from './i18n';
 import { useAppContext } from './context/AppContext';
 import { AppLoader } from './components/AppLoader';
+import { ParticlesLeaves } from './components/ParticlesLeaves';
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -43,6 +45,8 @@ export default function App() {
         return t('page.schemes');
       case '/market':
         return t('page.market');
+      case '/orders':
+        return 'My Orders';
       case '/dashboard':
         return t('page.dashboard');
       case '/admin':
@@ -57,6 +61,7 @@ export default function App() {
   const globalNatureBackground = (
     <div className="global-nature-bg" aria-hidden="true">
       <div className="greenery-mist-layer" />
+      {location.pathname !== '/' && <ParticlesLeaves />}
     </div>
   );
 
@@ -70,6 +75,27 @@ export default function App() {
         {globalNatureBackground}
         <div className="app-shell-layer">
           <Landing />
+          <ToastContainer />
+        </div>
+      </>
+    );
+  }
+
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
+  if (isAdminRoute) {
+    return (
+      <>
+        {globalNatureBackground}
+        <div className="app-shell-layer">
+          <main className="main-content" style={{ width: '100%' }}>
+            <div key={location.pathname} className="page-content route-transition" style={{ paddingTop: '2.25rem' }}>
+              <Routes>
+                <Route path="/admin-login" element={isAdmin ? <Navigate to="/admin" replace /> : <AdminLogin />} />
+                <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/admin-login" replace />} />
+              </Routes>
+            </div>
+          </main>
           <ToastContainer />
         </div>
       </>
@@ -110,9 +136,8 @@ export default function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/schemes" element={<Schemes />} />
                 <Route path="/market" element={<Market />} />
+                <Route path="/orders" element={<Orders />} />
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/admin-login" element={isAdmin ? <Navigate to="/admin" replace /> : <AdminLogin />} />
-                <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/admin-login" replace />} />
               </Routes>
             </div>
           </main>

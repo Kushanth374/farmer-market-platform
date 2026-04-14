@@ -316,13 +316,15 @@ export const Schemes: React.FC = () => {
 
       {/* ── LOANS TAB ─────────────────────────────────────────────────────── */}
       {activeTab === 'loans' && (
-        <div className="grid-cols-2 gap-8 items-start">
+        <div className="schemes-grid">
           {/* Loan Products List */}
-          <div className="space-y-4" style={{ gridColumn: '1 / 2' }}>
-            <div className="flex items-center gap-2 mb-2">
+          <div className="schemes-stack">
+            <div className="flex items-center gap-2 mb-2" style={{ alignItems: 'baseline' }}>
               <Landmark size={20} style={{ color: 'var(--primary)' }} />
-              <h3 className="font-bold text-lg">{t('schemes.availableLoanSchemes')}</h3>
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 900, color: 'var(--text-main)' }}>
+                {t('schemes.availableLoanSchemes')}
+              </h3>
+              <span className="badge badge-success" style={{ textTransform: 'none', fontSize: '0.72rem' }}>
                 {t('schemes.activeCount', { count: loanProducts.length })}
               </span>
             </div>
@@ -364,7 +366,7 @@ export const Schemes: React.FC = () => {
                 <div className="flex items-start gap-3 mb-3">
                   <span style={{ fontSize: '2rem', lineHeight: 1 }}>{loan.logo}</span>
                   <div className="flex-1">
-                    <h4 className="font-bold text-stone-800" style={{ fontSize: '1rem' }}>{loan.schemeName}</h4>
+                    <h4 style={{ margin: 0, fontWeight: 900, fontSize: '1rem', color: 'var(--text-main)' }}>{loan.schemeName}</h4>
                     <p className="text-muted" style={{ fontSize: '0.78rem' }}>{loan.bank}</p>
                   </div>
                 </div>
@@ -381,15 +383,15 @@ export const Schemes: React.FC = () => {
                   }}
                 >
                   <div>
-                    <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>{t('schemes.loanInterest')}</p>
+                    <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em' }}>{t('schemes.loanInterest')}</p>
                     <p style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--primary)' }}>{loan.interestRate}</p>
                   </div>
                   <div>
-                    <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>{t('schemes.maxAmount')}</p>
+                    <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em' }}>{t('schemes.maxAmount')}</p>
                     <p style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)' }}>{loan.maxAmount}</p>
                   </div>
                   <div>
-                    <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>{t('schemes.tenure')}</p>
+                    <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em' }}>{t('schemes.tenure')}</p>
                     <p style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-main)' }}>{loan.tenure}</p>
                   </div>
                 </div>
@@ -398,7 +400,7 @@ export const Schemes: React.FC = () => {
                   <strong>{t('schemes.purpose')}</strong> {loan.purpose}
                 </p>
 
-                <div className="space-y-1 mb-4">
+                <div style={{ display: 'grid', gap: '0.4rem', marginBottom: '1rem' }}>
                   {loan.highlights.map((h, i) => (
                     <div key={i} className="flex items-center gap-2" style={{ fontSize: '0.8rem', color: '#374151' }}>
                       <CheckCircle size={13} style={{ color: 'var(--primary)', flexShrink: 0 }} />
@@ -419,18 +421,18 @@ export const Schemes: React.FC = () => {
           </div>
 
           {/* Right Panel: Eligibility + Calculator */}
-          <div className="space-y-6" style={{ gridColumn: '2 / 3' }}>
+          <div className="schemes-stack">
             {/* Eligibility Card */}
             <div className="card overflow-hidden">
               <div className="flex items-center gap-2 mb-4" style={{ color: 'var(--primary)' }}>
                 <ShieldCheck size={22} />
-                <h3 className="font-bold text-lg" style={{ margin: 0, color: 'var(--text-main)' }}>
+                <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.05rem', fontWeight: 900 }}>
                   {t('schemes.guidance')}
                 </h3>
               </div>
 
               <div className="text-center py-4 bg-stone-50 rounded-2xl border border-stone-100 mb-4">
-                <p className="text-xs font-bold text-stone-500 uppercase tracking-widest mb-1">
+                <p style={{ fontSize: '0.72rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.18em', marginBottom: '0.25rem' }}>
                   {t('schemes.probability')}
                 </p>
                 <div className="eligibility-gauge-wrap">
@@ -445,20 +447,23 @@ export const Schemes: React.FC = () => {
                     </div>
                   </div>
                   <div
-                    className={`text-xl font-black ${
-                      eligibility.status === 'high'
-                        ? 'text-green-600'
-                        : eligibility.status === 'medium'
-                        ? 'text-blue-600'
-                        : 'text-amber-600'
-                    }`}
+                    style={{
+                      fontSize: '1.15rem',
+                      fontWeight: 950,
+                      color:
+                        eligibility.status === 'high'
+                          ? '#16a34a'
+                          : eligibility.status === 'medium'
+                          ? '#2563eb'
+                          : '#d97706',
+                    }}
                   >
                     {t(`schemes.${eligibility.status}`).toUpperCase()}
                   </div>
                 </div>
               </div>
 
-              <ul className="space-y-3">
+              <ul style={{ display: 'grid', gap: '0.6rem' }}>
                 <li className="flex items-start gap-3 text-sm">
                   <CheckCircle size={16} className={user ? 'text-green-500 shrink-0 mt-0.5' : 'text-stone-300 shrink-0 mt-0.5'} />
                   <span className={user ? 'text-stone-700' : 'text-stone-400'}>{t('schemes.profileRegistered')}</span>
@@ -478,7 +483,7 @@ export const Schemes: React.FC = () => {
             <div className="card">
               <div className="flex items-center gap-2 mb-5" style={{ color: 'var(--primary)' }}>
                 <Calculator size={22} />
-                <h3 className="font-bold text-lg" style={{ margin: 0, color: 'var(--text-main)' }}>
+                <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.05rem', fontWeight: 900 }}>
                   {t('schemes.calculator')}
                 </h3>
               </div>
@@ -530,10 +535,10 @@ export const Schemes: React.FC = () => {
               </div>
 
               <div className="mt-6">
-                <h4 className="font-bold text-sm mb-3 uppercase tracking-wider text-stone-500">
+                <h4 style={{ margin: '0 0 0.75rem 0', fontWeight: 900, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.16em', color: 'var(--text-muted)' }}>
                   {t('schemes.checklist')}
                 </h4>
-                <div className="space-y-2">
+                <div style={{ display: 'grid', gap: '0.5rem' }}>
                   {[t('schemes.docLand'), t('schemes.docAadhaar'), t('schemes.docPhoto')].map((doc) => (
                     <div key={doc} className="flex items-center gap-3 text-sm text-stone-600 bg-stone-50 p-2.5 rounded-lg border border-stone-100">
                       <CheckCircle size={16} className="text-green-500" /> {doc}
@@ -548,11 +553,13 @@ export const Schemes: React.FC = () => {
 
       {/* ── SCHEMES TAB ───────────────────────────────────────────────────── */}
       {activeTab === 'schemes' && (
-        <div className="grid-cols-2 gap-8 items-start">
-          <div className="space-y-4">
+        <div className="schemes-grid">
+          <div className="schemes-stack">
             <div className="flex items-center gap-2 mb-2">
               <Award size={20} style={{ color: 'var(--primary)' }} />
-              <h3 className="font-bold text-lg">{t('schemes.governmentSchemes')}</h3>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 900, color: 'var(--text-main)' }}>
+                {t('schemes.governmentSchemes')}
+              </h3>
             </div>
 
             {SCHEMES_DATABASE.map((scheme) => {
@@ -561,57 +568,63 @@ export const Schemes: React.FC = () => {
               return (
                 <div
                   key={scheme.id}
-                  className="border border-stone-200 rounded-xl overflow-hidden transition-all hover:border-primary/50"
-                  style={{ background: 'white' }}
+                  className="card"
+                  style={{ padding: 0, overflow: 'hidden', background: 'rgba(255, 255, 255, 0.78)', boxShadow: 'var(--shadow-sm)' }}
                 >
                   <div
-                    className="p-4 cursor-pointer flex justify-between items-center"
+                    className="scheme-row"
                     onClick={() => setExpandedScheme(isExpanded ? null : scheme.id)}
                   >
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <h4 className="font-bold text-stone-800">{scheme.name}</h4>
+                      <div className="scheme-row-head">
+                        <h4 className="scheme-row-title">{scheme.name}</h4>
                         <span
-                          className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                          style={{ background: `${scheme.tagColor}18`, color: scheme.tagColor }}
+                          className="scheme-pill"
+                          style={{ background: `${scheme.tagColor}18`, color: scheme.tagColor, borderColor: `${scheme.tagColor}30` }}
                         >
                           {scheme.tag}
                         </span>
                         <span
-                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                            score > 80 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                          }`}
+                          className="scheme-pill"
+                          style={{
+                            background: score > 80 ? 'rgba(22, 163, 74, 0.12)' : 'rgba(37, 99, 235, 0.12)',
+                            color: score > 80 ? '#166534' : '#1e40af',
+                            borderColor: score > 80 ? 'rgba(22, 163, 74, 0.22)' : 'rgba(37, 99, 235, 0.2)',
+                          }}
                         >
                           {score}% MATCH
                         </span>
                       </div>
-                      <p className="text-xs text-muted line-clamp-1">{scheme.desc}</p>
+                      <p className="text-muted" style={{ fontSize: '0.85rem', marginTop: '0.35rem' }}>{scheme.desc}</p>
                     </div>
-                    {isExpanded ? <ChevronUp size={20} className="text-muted" /> : <ChevronDown size={20} className="text-muted" />}
+                    {isExpanded ? <ChevronUp size={20} style={{ color: 'var(--text-muted)', flexShrink: 0 }} /> : <ChevronDown size={20} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />}
                   </div>
 
                   {isExpanded && (
-                    <div className="px-4 pb-4 pt-2 bg-stone-50 border-t border-stone-100">
+                    <div className="scheme-expanded">
                       <div className="mb-4">
-                        <h5 className="text-xs font-bold uppercase text-stone-500 mb-2 flex items-center gap-1">
+                        <h5 className="scheme-subhead">
                           <Info size={12} /> {t('schemes.whyMatched')}
                         </h5>
-                        <p className="text-sm text-stone-700 bg-white p-2 rounded-lg border border-stone-200">{scheme.whyMatch}</p>
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-main)', background: 'rgba(255, 255, 255, 0.86)', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                          {scheme.whyMatch}
+                        </p>
                       </div>
                       <div className="mb-4">
-                        <h5 className="text-xs font-bold uppercase text-stone-500 mb-2 flex items-center gap-1">
+                        <h5 className="scheme-subhead">
                           <CheckCircle size={12} /> {t('schemes.documentation')}
                         </h5>
-                        <div className="space-y-1">
+                        <div style={{ display: 'grid', gap: '0.4rem' }}>
                           {scheme.docs.map((doc) => (
-                            <div key={doc} className="flex items-center gap-2 text-sm text-stone-600">
-                              <span className="w-1.5 h-1.5 rounded-full bg-primary" /> {doc}
+                            <div key={doc} className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                              <span style={{ width: '8px', height: '8px', borderRadius: '999px', background: 'var(--primary)', flexShrink: 0 }} /> {doc}
                             </div>
                           ))}
                         </div>
                       </div>
                       <button
-                        className="btn w-full flex items-center justify-center gap-2"
+                        className="btn w-full"
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                         onClick={() => window.open(scheme.link, '_blank')}
                       >
                         {t('common.applyNow')} <ExternalLink size={14} />
@@ -624,16 +637,18 @@ export const Schemes: React.FC = () => {
           </div>
 
           {/* Right: Eligibility + Financial Partners */}
-          <div className="space-y-6">
+          <div className="schemes-stack">
             <div className="card overflow-hidden">
               <div className="flex items-center gap-2 mb-4" style={{ color: 'var(--primary)' }}>
                 <ShieldCheck size={22} />
-                <h3 className="font-bold text-lg" style={{ margin: 0, color: 'var(--text-main)' }}>
+                <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.05rem', fontWeight: 900 }}>
                   {t('schemes.guidance')}
                 </h3>
               </div>
               <div className="text-center py-4 bg-stone-50 rounded-2xl border border-stone-100 mb-4">
-                <p className="text-xs font-bold text-stone-500 uppercase tracking-widest mb-1">{t('schemes.probability')}</p>
+                <p style={{ fontSize: '0.72rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.18em', marginBottom: '0.25rem' }}>
+                  {t('schemes.probability')}
+                </p>
                 <div className="eligibility-gauge-wrap">
                   <div
                     className="eligibility-gauge"
@@ -645,12 +660,23 @@ export const Schemes: React.FC = () => {
                       <span>{eligibility.score}%</span>
                     </div>
                   </div>
-                  <div className={`text-xl font-black ${eligibility.status === 'high' ? 'text-green-600' : eligibility.status === 'medium' ? 'text-blue-600' : 'text-amber-600'}`}>
+                  <div
+                    style={{
+                      fontSize: '1.15rem',
+                      fontWeight: 950,
+                      color:
+                        eligibility.status === 'high'
+                          ? '#16a34a'
+                          : eligibility.status === 'medium'
+                          ? '#2563eb'
+                          : '#d97706',
+                    }}
+                  >
                     {t(`schemes.${eligibility.status}`).toUpperCase()}
                   </div>
                 </div>
               </div>
-              <ul className="space-y-3">
+              <ul style={{ display: 'grid', gap: '0.6rem' }}>
                 <li className="flex items-start gap-3 text-sm">
                   <CheckCircle size={16} className={user ? 'text-green-500 shrink-0 mt-0.5' : 'text-stone-300 shrink-0 mt-0.5'} />
                   <span className={user ? 'text-stone-700' : 'text-stone-400'}>{t('schemes.profileRegistered')}</span>
@@ -667,8 +693,11 @@ export const Schemes: React.FC = () => {
             </div>
 
             <div className="card">
-              <h3 className="font-bold text-lg mb-4">{t('schemes.partners')}</h3>
-              <div className="space-y-2">
+              <div className="flex items-center justify-between mb-4" style={{ gap: '1rem' }}>
+                <h3 style={{ margin: 0, fontWeight: 900, fontSize: '1.05rem' }}>{t('schemes.partners')}</h3>
+                <span className="badge badge-blue" style={{ textTransform: 'none' }}>Trusted portals</span>
+              </div>
+              <div style={{ display: 'grid', gap: '0.6rem' }}>
                 {[
                   { name: 'Canara Bank - Agri Digital Portal', link: 'https://portal.digiloans.canarabank.bank.in/ALOSportal' },
                   { name: 'PNB - Online Agriculture Loan Application', link: 'https://weblens.pnb.bank.in/lendperfect/home' },
@@ -676,13 +705,14 @@ export const Schemes: React.FC = () => {
                   { name: 'HDFC Bank - Retail Agri Loan', link: 'https://www.hdfcbank.com/sme/borrow/popular-loans/retail-agri-loans/eligibility' },
                   { name: 'Canara Bank - Vehicle to Agriculturists', link: 'https://www.canarabank.bank.in/loans/vehicle-loans/canara-vehicle-to-agriculturists' },
                 ].map((partner) => (
-                  <div key={partner.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
-                    <span className="font-medium text-stone-700">{partner.name}</span>
+                  <div key={partner.name} className="partner-row">
+                    <span className="partner-name">{partner.name}</span>
                     <button
-                      className="text-primary text-xs font-bold flex items-center gap-1"
+                      type="button"
+                      className="btn btn-secondary partner-action"
                       onClick={() => window.open(partner.link, '_blank')}
                     >
-                      {t('schemes.visitBank')} <ExternalLink size={12} />
+                      {t('schemes.visitBank')} <ExternalLink size={14} />
                     </button>
                   </div>
                 ))}
@@ -691,6 +721,106 @@ export const Schemes: React.FC = () => {
           </div>
         </div>
       )}
+
+      <style>{`
+        .schemes-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 1.5rem;
+          align-items: start;
+        }
+
+        .schemes-stack {
+          display: grid;
+          gap: 1rem;
+          align-content: start;
+          min-width: 0;
+        }
+
+        .scheme-row {
+          cursor: pointer;
+          padding: 1rem;
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 1rem;
+        }
+
+        .scheme-row-head {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+        }
+
+        .scheme-row-title {
+          margin: 0;
+          font-weight: 950;
+          color: var(--text-main);
+          font-size: 0.98rem;
+        }
+
+        .scheme-pill {
+          font-size: 0.68rem;
+          font-weight: 900;
+          padding: 0.2rem 0.45rem;
+          border-radius: 999px;
+          border: 1px solid rgba(42, 79, 51, 0.14);
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+        }
+
+        .scheme-expanded {
+          padding: 0 1rem 1rem;
+          border-top: 1px solid rgba(42, 79, 51, 0.1);
+          background: rgba(237, 245, 234, 0.42);
+        }
+
+        .scheme-subhead {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          margin: 0 0 0.5rem 0;
+          font-size: 0.72rem;
+          font-weight: 950;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          color: var(--text-muted);
+        }
+
+        .partner-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+          padding: 0.75rem;
+          border-radius: 14px;
+          background: rgba(237, 245, 234, 0.42);
+          border: 1px solid rgba(42, 79, 51, 0.1);
+        }
+
+        .partner-name {
+          font-weight: 800;
+          color: var(--text-main);
+          font-size: 0.9rem;
+          min-width: 0;
+        }
+
+        .partner-action {
+          padding: 0.45rem 0.7rem;
+          font-size: 0.85rem;
+          border-radius: 12px;
+          flex-shrink: 0;
+          white-space: nowrap;
+        }
+
+        @media (min-width: 1024px) {
+          .schemes-grid {
+            grid-template-columns: 1.25fr 0.75fr;
+            gap: 1.75rem;
+          }
+        }
+      `}</style>
     </div>
   );
 };

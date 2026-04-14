@@ -53,6 +53,7 @@ function createDefaultDatabase() {
     farmers: {},
     buyers: {},
     marketListings: defaultMarketListings,
+    orders: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -81,6 +82,7 @@ function loadDatabase() {
       farmers: parsed.farmers || {},
       buyers: parsed.buyers || {},
       marketListings: Array.isArray(parsed.marketListings) ? parsed.marketListings : defaultMarketListings,
+      orders: Array.isArray(parsed.orders) ? parsed.orders : [],
     };
   } catch (_error) {
     const fallback = createDefaultDatabase();

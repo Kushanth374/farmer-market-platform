@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Eye, EyeOff, KeyRound, LogIn, ShieldCheck, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, KeyRound, LogIn, ShieldCheck, UserPlus, Tractor, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { useTranslations } from '../i18n';
@@ -74,30 +74,38 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="card mb-6" style={{ background: 'linear-gradient(to right, var(--primary), var(--primary-hover))', color: 'white', border: 'none' }}>
-        <h2 className="heading-1" style={{ color: 'white' }}>{t('login.welcomeTitle')}</h2>
-        <p style={{ opacity: 0.9 }}>{t('login.welcomeText')}</p>
-      </div>
-
-      <div className="card max-w-2xl mx-auto">
-        <div className="flex items-center gap-2 mb-6" style={{ color: 'var(--primary)' }}>
-          <LogIn />
-          <h3 className="heading-1" style={{ fontSize: '1.25rem', margin: 0, color: 'var(--text-main)' }}>{t('registration.accessTitle')}</h3>
+    <div className="login-wrap">
+      <div className="login-card card">
+        <div className="login-brand" aria-label="Kisan Bandhu Login">
+          <span className="login-brand-mark" aria-hidden="true">
+            <Tractor size={18} className="brand-tractor-icon" />
+          </span>
+          <span className="login-brand-text">
+            <strong>Kisan Bandhu</strong>
+            <small>Secure Login</small>
+          </span>
         </div>
 
-        <div className="card mb-4" style={{ background: 'rgba(47, 111, 62, 0.06)', border: '1px solid var(--border)' }}>
-          <div className="flex items-center gap-2" style={{ marginBottom: '0.5rem', color: 'var(--primary)' }}>
-            <ShieldCheck size={16} />
-            <strong style={{ fontSize: '0.9rem' }}>{t('login.securityTitle')}</strong>
+        <div className="login-head">
+          <div className="login-head-icon" aria-hidden="true">
+            <LogIn size={18} />
           </div>
-          <p className="text-muted" style={{ marginBottom: 0 }}>
-            {t('login.securityText')}
-          </p>
+          <div style={{ minWidth: 0 }}>
+            <h2 className="heading-1 login-title">{t('login.welcomeTitle')}</h2>
+            <p className="login-subtitle">{t('login.welcomeText')}</p>
+          </div>
         </div>
 
-        <form onSubmit={handleAccessAccount}>
-          <div className="input-group">
+        <div className="login-note">
+          <div className="login-note-head">
+            <ShieldCheck size={16} />
+            <strong>{t('login.securityTitle')}</strong>
+          </div>
+          <p className="login-note-text">{t('login.securityText')}</p>
+        </div>
+
+        <form onSubmit={handleAccessAccount} className="login-form">
+          <div className="input-group" style={{ marginBottom: 0 }}>
             <label className="input-label">{t('registration.phone')}</label>
             <input
               type="tel"
@@ -116,7 +124,7 @@ export const Login: React.FC = () => {
             {phoneError ? <p style={{ color: '#b45309', fontSize: '0.82rem', marginTop: '0.4rem' }}>{phoneError}</p> : null}
           </div>
 
-          <div className="input-group">
+          <div className="input-group" style={{ marginBottom: 0 }}>
             <label className="input-label">{t('registration.accessPassword')}</label>
             <div style={{ position: 'relative' }}>
               <input
@@ -138,10 +146,10 @@ export const Login: React.FC = () => {
                   right: '0.4rem',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  borderRadius: '6px',
+                  borderRadius: '10px',
                   padding: '0.35rem',
-                  border: 'none',
-                  background: 'transparent',
+                  border: '1px solid rgba(42, 79, 51, 0.12)',
+                  background: 'rgba(255,255,255,0.65)',
                   boxShadow: 'none',
                 }}
               >
@@ -150,7 +158,7 @@ export const Login: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between mb-4" style={{ flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div className="login-row">
             <label className="flex items-center gap-2" style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
               <input type="checkbox" checked={rememberPhone} onChange={(e) => setRememberPhone(e.target.checked)} />
               {t('login.rememberPhone')}
@@ -158,32 +166,201 @@ export const Login: React.FC = () => {
             <button
               type="button"
               onClick={() => addToast(t('login.resetHint'), 'info')}
-              className="btn-secondary"
-              style={{ border: 'none', padding: 0, background: 'transparent', boxShadow: 'none', color: 'var(--primary)', fontSize: '0.9rem' }}
+              className="login-link"
             >
               <KeyRound size={14} /> {t('login.forgotPassword')}
             </button>
           </div>
 
           {lastSuccessPhone && (
-            <button
-              type="button"
-              className="btn btn-secondary w-full mb-4"
-              onClick={() => setAccessPhone(lastSuccessPhone)}
-            >
+            <button type="button" className="btn btn-secondary w-full" onClick={() => setAccessPhone(lastSuccessPhone)}>
               {t('login.useLastAccount')}: {lastSuccessPhone}
             </button>
           )}
 
-          <button type="submit" className="btn w-full" disabled={isAccessing}>
-            <LogIn size={18} /> {isAccessing ? t('registration.checking') : t('registration.access')}
+          <button type="submit" className="btn w-full" disabled={isAccessing} style={{ borderRadius: '14px' }}>
+            <LogIn size={18} /> {isAccessing ? t('registration.checking') : t('registration.access')} <ArrowRight size={18} />
           </button>
         </form>
 
-        <button type="button" className="btn btn-secondary w-full mt-4" onClick={() => navigate('/registration')}>
+        <button type="button" className="btn btn-secondary w-full" onClick={() => navigate('/registration')}>
           <UserPlus size={18} /> {t('login.createNewAccount')}
         </button>
       </div>
+
+      <style>{`
+        .login-wrap {
+          max-width: 920px;
+          margin: 0 auto;
+          padding: 1.5rem 0 2.5rem;
+          display: grid;
+          place-items: start center;
+        }
+
+        .login-card {
+          width: min(720px, 100%);
+          padding: 1.1rem;
+          border: 1px solid rgba(255, 255, 255, 0.72);
+          box-shadow: var(--shadow-lg);
+          background:
+            radial-gradient(circle at 18% 20%, rgba(116, 166, 59, 0.12), transparent 36%),
+            radial-gradient(circle at 88% 58%, rgba(47, 111, 62, 0.12), transparent 38%),
+            rgba(255, 255, 255, 0.78);
+        }
+
+        .login-brand {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.75rem 0.9rem;
+          border-radius: 18px;
+          margin-bottom: 0.9rem;
+          background: rgba(255, 255, 255, 0.55);
+          border: 1px solid rgba(42, 79, 51, 0.12);
+          box-shadow: 0 14px 30px rgba(16, 35, 29, 0.08);
+        }
+
+        .login-brand-mark {
+          width: 42px;
+          height: 42px;
+          border-radius: 14px;
+          display: grid;
+          place-items: center;
+          color: #fffdf7;
+          background: linear-gradient(135deg, #2f6f3e, #74a63b);
+          box-shadow: 0 18px 34px rgba(47, 111, 62, 0.18);
+          flex-shrink: 0;
+        }
+
+        .login-brand-text {
+          display: grid;
+          gap: 2px;
+          min-width: 0;
+        }
+
+        .login-brand-text strong {
+          color: var(--text-main);
+          font-weight: 950;
+          letter-spacing: -0.01em;
+          line-height: 1.1;
+        }
+
+        .login-brand-text small {
+          color: var(--text-muted);
+          font-weight: 800;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          font-size: 0.72rem;
+        }
+
+        .login-head {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin-bottom: 0.85rem;
+        }
+
+        .login-head-icon {
+          width: 42px;
+          height: 42px;
+          border-radius: 14px;
+          display: grid;
+          place-items: center;
+          background: rgba(47, 111, 62, 0.1);
+          border: 1px solid rgba(42, 79, 51, 0.12);
+          color: var(--primary);
+          box-shadow: 0 14px 30px rgba(16, 35, 29, 0.12);
+          flex-shrink: 0;
+        }
+
+        .login-title {
+          margin: 0;
+          font-size: 1.25rem;
+        }
+
+        .login-subtitle {
+          margin: 0.25rem 0 0 0;
+          color: var(--text-muted);
+          font-weight: 650;
+          font-size: 0.9rem;
+        }
+
+        .login-note {
+          border-radius: 18px;
+          padding: 0.85rem 0.95rem;
+          margin-bottom: 0.9rem;
+          border: 1px solid rgba(42, 79, 51, 0.12);
+          background: linear-gradient(135deg, rgba(16, 48, 33, 0.96), rgba(47, 111, 62, 0.86));
+          color: white;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .login-note::after {
+          content: '';
+          position: absolute;
+          inset: -80% -40%;
+          background: radial-gradient(circle, rgba(255,255,255,0.16), transparent 60%);
+          transform: rotate(12deg);
+          opacity: 0.9;
+          pointer-events: none;
+        }
+
+        .login-note-head {
+          position: relative;
+          z-index: 1;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-weight: 900;
+          margin-bottom: 0.25rem;
+        }
+
+        .login-note-text {
+          position: relative;
+          z-index: 1;
+          margin: 0;
+          font-size: 0.88rem;
+          color: rgba(255,255,255,0.84);
+          font-weight: 650;
+        }
+
+        .login-form {
+          display: grid;
+          gap: 0.85rem;
+          margin-bottom: 0.85rem;
+        }
+
+        .login-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+          flex-wrap: wrap;
+        }
+
+        .login-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          border: 0;
+          padding: 0;
+          background: transparent;
+          color: var(--primary);
+          font-weight: 800;
+          cursor: pointer;
+          font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+          .login-wrap {
+            padding: 1rem 0 2rem;
+          }
+          .login-card {
+            padding: 1rem;
+          }
+        }
+      `}</style>
     </div>
   );
 };

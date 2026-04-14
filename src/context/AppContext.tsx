@@ -25,6 +25,22 @@ export type MarketListing = {
   image: string;
 };
 
+export type Order = {
+  id: number;
+  buyerPhone: string;
+  sellerPhone: string;
+  listingId: number | null;
+  crop: string;
+  qty: string;
+  unitPrice: number;
+  totalPrice: number;
+  txId: string;
+  sellerName: string;
+  sellerAddress: string;
+  status: string;
+  createdAt: string;
+};
+
 type StoredAccounts = Record<string, User>;
 
 interface Toast {
@@ -41,6 +57,9 @@ interface AppContextType {
   accounts: StoredAccounts;
   marketListings: MarketListing[];
   refreshMarketListings: () => Promise<MarketListing[] | null>;
+  orders: Order[];
+  refreshOrders: () => Promise<Order[] | null>;
+  createOrder: (payload: Omit<Order, 'id' | 'createdAt' | 'status'> & { status?: string; createdAt?: string }) => Promise<Order | null>;
   registerUser: (user: User) => Promise<boolean>;
   accessAccount: (phone: string, password: string) => Promise<'success' | 'invalid_password' | 'not_found'>;
   signOut: () => void;
@@ -111,6 +130,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [marketListings, setMarketListings] = useState<MarketListing[]>(DEFAULT_LISTINGS);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [isMarketLive, setIsMarketLive] = useState(false);
 
@@ -154,6 +174,48 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  type OrdersResponse = {
+    orders: Order[];
+    lastUpdated: string;
+  };
+
+  const syncOrders = async (buyerPhone?: string | null) => {
+    const normalizedBuyer = String(buyerPhone ?? user?.phone ?? '').trim();
+    if (!normalizedBuyer) {
+      setOrders([]);
+      return [];
+    }
+
+    try {
+      const data = await readJson<OrdersResponse>(`/api/orders?buyerPhone=${encodeURIComponent(normalizedBuyer)}`);
+      setOrders(data.orders || []);
+      setIsMarketLive(true);
+      return data.orders || [];
+    } catch (error) {
+      console.error('Failed to sync orders:', error);
+      setIsMarketLive(false);
+      return null;
+    }
+  };
+
+  const createOrder = async (
+    payload: Omit<Order, 'id' | 'createdAt' | 'status'> & { status?: string; createdAt?: string },
+  ) => {
+    try {
+      const result = await sendJson<{ order: Order }>('/api/orders', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      setOrders((prev) => [result.order, ...prev]);
+      setIsMarketLive(true);
+      return result.order;
+    } catch (error) {
+      console.error('Failed to create order:', error);
+      setIsMarketLive(false);
+      return null;
+    }
+  };
+
   useEffect(() => {
     const savedSessionPhone = window.localStorage.getItem(SESSION_KEY) ?? window.localStorage.getItem(LEGACY_SESSION_KEY);
     const savedListings = window.localStorage.getItem(LISTINGS_KEY) ?? window.localStorage.getItem(LEGACY_LISTINGS_KEY);
@@ -190,6 +252,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     void syncAccounts(savedSessionPhone);
     void syncMarketListings();
+    void syncOrders(savedSessionPhone);
   }, []);
 
   useEffect(() => {
@@ -237,6 +300,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setUser(result.account);
     await syncMarketListings();
     void syncAccounts(normalizedPhone);
+    void syncOrders(normalizedPhone);
     return true;
   };
 
@@ -255,6 +319,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       window.localStorage.setItem(SESSION_KEY, normalizedPhone);
       await syncMarketListings();
       void syncAccounts(normalizedPhone);
+      void syncOrders(normalizedPhone);
       return 'success';
     } catch (error) {
       if (error instanceof Error) {
@@ -273,6 +338,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const signOut = () => {
     setUser(null);
     window.localStorage.removeItem(SESSION_KEY);
+    setOrders([]);
   };
 
   const adminSignIn = (pin: string) => {
@@ -466,6 +532,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         accounts,
         marketListings,
         refreshMarketListings: syncMarketListings,
+        orders,
+        refreshOrders: syncOrders,
+        createOrder,
         registerUser,
         accessAccount,
         signOut,

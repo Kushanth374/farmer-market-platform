@@ -297,6 +297,22 @@ const translations: Record<string, TranslationEntry> = {
   'bill.generatingPdf': { en: 'Generating PDF...', hi: 'PDF बनाया जा रहा है...', mr: 'PDF तयार केला जात आहे...' },
   'bill.downloadPdf': { en: 'Download Bill PDF', hi: 'बिल PDF डाउनलोड करें', mr: 'बिल PDF डाउनलोड करा' },
   'bill.close': { en: 'Close', hi: 'बंद करें', mr: 'बंद करा' },
+  'payment.title': { en: 'Secure Payment', hi: 'सुरक्षित भुगतान', mr: 'सुरक्षित पेमेंट' },
+  'payment.razorpay': { en: 'Razorpay Secure', hi: 'रेजरपे सुरक्षित', mr: 'रेजरपे सुरक्षित' },
+  'payment.success': { en: 'Payment Successful!', hi: 'भुगतान सफल रहा!', mr: 'पेमेंट यशस्वी झाले!' },
+  'payment.failed': { en: 'Payment Failed. Please try again.', hi: 'भुगतान विफल रहा। कृपया पुनः प्रयास करें।', mr: 'पेमेंट अयशस्वी झाले. कृपया पुन्हा प्रयत्न करा.' },
+  'payment.transactionId': { en: 'Transaction ID', hi: 'लेनदेन आईडी', mr: 'ट्रान्झॅक्शन आयडी' },
+  'payment.status': { en: 'Payment Status', hi: 'भुगतान की स्थिति', mr: 'पेमेंट स्थिती' },
+  'payment.paid': { en: 'PAID', hi: 'भुगतान किया गया', mr: 'पेमेंट केले' },
+  'upi.scanToPay': { en: 'Scan to Pay', hi: 'भुगतान के लिए स्कैन करें', mr: 'पेमेंटसाठी स्कॅन करा' },
+  'upi.waiting': { en: 'Waiting for payment confirmation...', hi: 'भुगतान पुष्टि की प्रतीक्षा कर रहा है...', mr: 'पेमेंटची प्रतीक्षा करत आहे...' },
+  'upi.instruction': { en: 'Open any UPI app like GPay, PhonePe, or Paytm', hi: 'किसी भी UPI ऐप जैसे GPay, PhonePe या Paytm खोलें', mr: 'कोणतेही UPI ॲप उघडा जसे की GPay, PhonePe किंवा Paytm' },
+  'upi.verify': { en: 'Confirm Payment', hi: 'भुगतान की पुष्टि करें', mr: 'पेमेंटची पुष्टी करा' },
+  'upi.amount': { en: 'Total Amount', hi: 'कुल राशि', mr: 'एकूण रक्कम' },
+  'upi.id': { en: 'UPI ID: {id}', hi: 'UPI आईडी: {id}', mr: 'UPI आयडी: {id}' },
+  'market.selectQuantity': { en: 'Select Quantity to Buy', hi: 'खरीदने के लिए मात्रा चुनें', mr: 'खरेदीसाठी प्रमाण निवडा' },
+  'market.available': { en: 'Available', hi: 'उपलब्ध', mr: 'उपलब्ध' },
+  'market.orderTotal': { en: 'Order Total', hi: 'कुल ऑर्डर', mr: 'एकूण ऑर्डर' },
 };
 
 const cropLabels: Record<string, string> = {
