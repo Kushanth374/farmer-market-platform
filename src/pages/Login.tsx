@@ -76,13 +76,13 @@ export const Login: React.FC = () => {
   return (
     <div className="login-wrap">
       <div className="login-card card">
-        <div className="login-brand" aria-label="Kisan Bandhu Login">
+        <div className="login-brand" aria-label={`${t('brand.name')} ${t('login.brandSubtitle')}`}>
           <span className="login-brand-mark" aria-hidden="true">
             <Tractor size={18} className="brand-tractor-icon" />
           </span>
           <span className="login-brand-text">
-            <strong>Kisan Bandhu</strong>
-            <small>Secure Login</small>
+            <strong>{t('brand.name')}</strong>
+            <small>{t('login.brandSubtitle')}</small>
           </span>
         </div>
 

@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Smartphone, CheckCircle2, ShieldCheck, X, ShoppingCart, ArrowRight, Minus, Plus, MapPin, ExternalLink } from 'lucide-react';
 import { useTranslations } from '../i18n';
 import { MarketListing } from '../context/AppContext';
@@ -11,7 +12,7 @@ interface UPIMarketModalProps {
 }
 
 export const UPIMarketModal: React.FC<UPIMarketModalProps> = ({ listing, onSuccess, onClose }) => {
-  const { t } = useTranslations();
+  const { t, language } = useTranslations();
   const { accounts } = useAppContext();
   const [status, setStatus] = useState<'quantity' | 'scan' | 'verifying' | 'success'>('quantity');
   
@@ -25,8 +26,8 @@ export const UPIMarketModal: React.FC<UPIMarketModalProps> = ({ listing, onSucce
     const raw = String(listing.qty || '').trim();
     const parts = raw.split(/\s+/).filter(Boolean);
     if (parts.length >= 2) return parts.slice(1).join(' ');
-    return 'Units';
-  }, [listing.qty]);
+    return t('market.units');
+  }, [listing.qty, language]);
   const [selectedQty, setSelectedQty] = useState(1);
 
   // Extract numeric unit price from "Rs 2,200/qtl"
@@ -34,43 +35,58 @@ export const UPIMarketModal: React.FC<UPIMarketModalProps> = ({ listing, onSucce
   const totalPrice = selectedQty * unitPrice;
   const formattedTotalPrice = `Rs ${totalPrice.toLocaleString()}`;
 
+  const locationUnavailable = t('common.locationUnavailable');
+
   const sellerAddress = useMemo(() => {
     const fromListing = String(listing.address || '').trim();
     if (fromListing) return fromListing;
 
     const fromAccount = String(accounts[listing.ownerPhone]?.address || '').trim();
-    return fromAccount || 'Location unavailable';
-  }, [accounts, listing.address, listing.ownerPhone]);
+    return fromAccount || locationUnavailable;
+  }, [accounts, listing.address, listing.ownerPhone, locationUnavailable]);
 
   const sellerMapsQuery = useMemo(() => encodeURIComponent(sellerAddress), [sellerAddress]);
   const googleMapsUrl = useMemo(
     () => `https://www.google.com/maps/search/?api=1&query=${sellerMapsQuery}`,
     [sellerMapsQuery],
   );
-  const googleMapsEmbedUrl = useMemo(
-    () => `https://www.google.com/maps?q=${sellerMapsQuery}&output=embed`,
-    [sellerMapsQuery],
-  );
 
   const upiId = "kushanthgowda261@okaxis"; 
   const upiString = `upi://pay?pa=${upiId}&pn=Kisan%20Bandhu&am=${totalPrice}&cu=INR`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiString)}`;
+  const verifyTimerRef = useRef<number | null>(null);
+  const successTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (verifyTimerRef.current) {
+        window.clearTimeout(verifyTimerRef.current);
+      }
+      if (successTimerRef.current) {
+        window.clearTimeout(successTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleVerify = () => {
+    if (status === 'verifying' || status === 'success') return;
     setStatus('verifying');
-    setTimeout(() => {
+    verifyTimerRef.current = window.setTimeout(() => {
       setStatus('success');
-      setTimeout(() => {
+      successTimerRef.current = window.setTimeout(() => {
         onSuccess(
           `TXN${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
           `${selectedQty} ${unit}`
         );
-      }, 1500);
-    }, 2000);
+      }, 3400);
+    }, 1800);
   };
 
-  return (
-    <div className="modal-overlay" style={{
+  const modalContent = (
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{
       position: 'fixed',
       inset: 0,
       background: 'rgba(15, 30, 20, 0.65)',
@@ -79,23 +95,36 @@ export const UPIMarketModal: React.FC<UPIMarketModalProps> = ({ listing, onSucce
       placeItems: 'center',
       zIndex: 1000,
       padding: '1rem'
-    }}>
-      <div className="card" style={{
+    }}
+    >
+      <div
+        className="card upi-market-modal-card"
+        onClick={(e) => e.stopPropagation()}
+        style={{
         width: 'min(420px, 100%)',
         padding: '0',
         overflow: 'hidden',
         border: '1px solid rgba(255, 255, 255, 0.4)',
         boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
-        animation: 'sectionLiftIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both'
-      }}>
+        animation: 'upiModalPop 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both',
+        height: 'min(92vh, 720px)',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
+      }}
+      >
         <div style={{
           background: 'linear-gradient(135deg, #2f6f3e, #74a63b)',
-          padding: '1.5rem',
+          padding: '1rem 1.2rem',
           color: 'white',
-          position: 'relative'
+          position: 'sticky',
+          top: 0,
+          zIndex: 2
         }}>
           <button 
+            type="button"
             onClick={onClose}
+            aria-label={t('bill.close')}
             style={{ 
               position: 'absolute', 
               right: '1rem', 
@@ -123,9 +152,9 @@ export const UPIMarketModal: React.FC<UPIMarketModalProps> = ({ listing, onSucce
           </div>
         </div>
 
-        <div style={{ padding: '1.75rem' }}>
+        <div style={{ padding: '1rem 1.2rem', overflow: 'hidden', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           {status === 'quantity' && (
-            <div className="animate-fade-in">
+            <div className="animate-fade-in upi-qty-screen-fit">
               <div className="upi-qty-header">
                 <div>
                   <div className="upi-qty-title">{t('market.selectQuantity')}</div>
@@ -144,15 +173,15 @@ export const UPIMarketModal: React.FC<UPIMarketModalProps> = ({ listing, onSucce
                   className="btn btn-secondary upi-qty-stepper-btn"
                   onClick={() => setSelectedQty((q) => Math.max(1, q - 1))}
                   disabled={selectedQty <= 1}
-                  aria-label="Decrease quantity"
-                  title="Decrease"
+                  aria-label={t('upi.decreaseQty')}
+                  title={t('upi.decreaseQty')}
                 >
                   <Minus size={16} />
                 </button>
 
                 <div className="upi-qty-input-wrap">
                   <label className="upi-qty-input-label" htmlFor="upi-qty-input">
-                    Qty
+                    {t('upi.qtyShort')}
                   </label>
                   <input
                     id="upi-qty-input"
@@ -173,7 +202,7 @@ export const UPIMarketModal: React.FC<UPIMarketModalProps> = ({ listing, onSucce
                     aria-describedby="upi-qty-help"
                   />
                   <div id="upi-qty-help" className="upi-qty-help">
-                    Max {maxQty}
+                    {t('upi.maxQty', { max: maxQty })}
                   </div>
                 </div>
 
@@ -182,20 +211,20 @@ export const UPIMarketModal: React.FC<UPIMarketModalProps> = ({ listing, onSucce
                   className="btn btn-secondary upi-qty-stepper-btn"
                   onClick={() => setSelectedQty((q) => Math.min(maxQty, q + 1))}
                   disabled={selectedQty >= maxQty}
-                  aria-label="Increase quantity"
-                  title="Increase"
+                  aria-label={t('upi.increaseQty')}
+                  title={t('upi.increaseQty')}
                 >
                   <Plus size={16} />
                 </button>
               </div>
 
-              <div className="upi-qty-breakdown" role="group" aria-label="Order summary">
+              <div className="upi-qty-breakdown" role="group" aria-label={t('upi.orderSummaryAria')}>
                 <div className="upi-qty-breakdown-row">
                   <span className="upi-qty-breakdown-label">{t('market.askingPrice')}</span>
                   <span className="upi-qty-breakdown-value">Rs {unitPrice.toLocaleString()}/{unit}</span>
                 </div>
                 <div className="upi-qty-breakdown-row">
-                  <span className="upi-qty-breakdown-label">Quantity</span>
+                  <span className="upi-qty-breakdown-label">{t('market.quantity')}</span>
                   <span className="upi-qty-breakdown-value">{selectedQty} {unit}</span>
                 </div>
                 <div className="upi-qty-breakdown-divider" />
@@ -205,126 +234,128 @@ export const UPIMarketModal: React.FC<UPIMarketModalProps> = ({ listing, onSucce
                 </div>
               </div>
 
-              <div className="upi-seller-location" role="group" aria-label="Seller location">
-                <div className="upi-seller-location-head">
-                  <div className="upi-seller-location-title">
-                    <MapPin size={16} /> Seller location
+              <div className="upi-qty-actions" role="group" aria-label={t('upi.sellerLocationTitle')}>
+                <div className="upi-qty-location">
+                  <div className="upi-qty-location-title">
+                    <MapPin size={15} /> {t('upi.sellerLocationTitle')}
                   </div>
+                  <div className="upi-qty-location-address">{sellerAddress}</div>
+                </div>
+                <div className="upi-qty-action-buttons">
                   <a
-                    className="upi-seller-location-link"
+                    className="btn btn-secondary upi-qty-map-btn"
                     href={googleMapsUrl}
                     target="_blank"
                     rel="noreferrer"
-                    aria-label="Open seller location in Google Maps"
-                    title="Open in Google Maps"
+                    aria-label={t('upi.openMapsTitle')}
+                    title={t('upi.openMapsTitle')}
                   >
-                    Open <ExternalLink size={14} />
+                    {t('upi.openMaps')} <ExternalLink size={14} />
                   </a>
+                  <button className="btn upi-qty-pay-btn" onClick={() => setStatus('scan')}>
+                    {t('common.applyNow')} <ArrowRight size={16} />
+                  </button>
                 </div>
-                <div className="upi-seller-location-address">{sellerAddress}</div>
-                {sellerAddress !== 'Location unavailable' && (
-                  <div className="upi-seller-location-map">
-                    <iframe
-                      title="Seller location map"
-                      src={googleMapsEmbedUrl}
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      style={{ width: '100%', height: '100%', border: 0, borderRadius: '12px' }}
-                    />
-                  </div>
-                )}
               </div>
-
-              <button className="btn w-full" onClick={() => setStatus('scan')}>
-                {t('common.applyNow')} <ArrowRight size={18} />
-              </button>
             </div>
           )}
 
           {status === 'scan' && (
             <div className="animate-fade-in">
               <div className="upi-pay-layout">
-                <div className="upi-pay-card upi-pay-card--pickup">
-                  <div className="upi-pay-card-head">
-                    <div className="upi-pay-card-title">
-                      <MapPin size={16} /> Pickup location
+                <div className="upi-pay-scroll">
+                  <div className="upi-pay-card upi-pay-card--pickup">
+                    <div className="upi-pay-card-head">
+                      <div className="upi-pay-card-title">
+                        <MapPin size={16} /> {t('upi.pickupLocation')}
+                      </div>
+                      <a
+                        className="upi-pay-inline-link"
+                        href={googleMapsUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={t('upi.openMapsTitle')}
+                        title={t('upi.openMapsTitle')}
+                      >
+                        {t('orders.map')} <ExternalLink size={14} />
+                      </a>
                     </div>
-                    <a
-                      className="upi-pay-inline-link"
-                      href={googleMapsUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label="Open pickup location in Google Maps"
-                      title="Open in Google Maps"
-                    >
-                      Maps <ExternalLink size={14} />
-                    </a>
+                    <div className="upi-pay-card-subtitle">{sellerAddress}</div>
                   </div>
-                  <div className="upi-pay-card-subtitle">{sellerAddress}</div>
-                </div>
 
-                <div className="upi-pay-qr-wrap" aria-label="UPI QR code">
-                  <div className="upi-pay-qr-card">
-                    <img className="upi-pay-qr" src={qrUrl} alt="UPI QR Code" />
+                  <div className="upi-pay-qr-wrap" aria-label={t('upi.qrCodeAlt')}>
+                    <div className="upi-pay-qr-card">
+                      <img className="upi-pay-qr" src={qrUrl} alt={t('upi.qrCodeAlt')} />
+                    </div>
+                  </div>
+
+                  <div className="upi-pay-card upi-pay-card--amount" role="group" aria-label={t('payment.title')}>
+                    <div className="upi-pay-amount-kicker">{t('upi.amount')}</div>
+                    <div className="upi-pay-amount">{formattedTotalPrice}</div>
+                    <div className="upi-pay-upi">{t('upi.id', { id: upiId })}</div>
+                  </div>
+
+                  <div className="upi-pay-tip" role="note">
+                    {t('upi.instruction')}
                   </div>
                 </div>
 
-                <div className="upi-pay-card upi-pay-card--amount" role="group" aria-label="Payment summary">
-                  <div className="upi-pay-amount-kicker">{t('upi.amount')}</div>
-                  <div className="upi-pay-amount">{formattedTotalPrice}</div>
-                  <div className="upi-pay-upi">{t('upi.id', { id: upiId })}</div>
+                <div className="upi-pay-cta-wrap">
+                  <button className="btn w-full upi-pay-cta" onClick={handleVerify}>
+                    <ShieldCheck size={18} /> {t('upi.verify')}
+                  </button>
                 </div>
-
-                <div className="upi-pay-tip" role="note">
-                  {t('upi.instruction')}
-                </div>
-
-                <button className="btn w-full upi-pay-cta" onClick={handleVerify}>
-                  <ShieldCheck size={18} /> {t('upi.verify')}
-                </button>
               </div>
             </div>
           )}
 
           {status === 'verifying' && (
-            <div className="animate-fade-in" style={{ padding: '3rem 0' }}>
-              <div 
-                className="app-loader-ring" 
-                style={{ 
-                  position: 'relative', 
-                  width: '60px', 
-                  height: '60px', 
-                  margin: '0 auto 1.5rem' 
-                }} 
-              />
-              <p style={{ fontWeight: 600, color: 'var(--text-main)' }}>{t('upi.waiting')}</p>
+            <div className="animate-fade-in upi-status-screen">
+              <div className="upi-status-processing-wrap">
+                <div className="upi-status-glow" />
+                <div className="upi-status-orbit">
+                  <div className="upi-status-orbit-dot" />
+                </div>
+                <div className="upi-status-core-ring" />
+              </div>
+              <p className="upi-status-title">{t('upi.waiting')}</p>
+              <p className="upi-status-subtitle">{t('payment.title')}</p>
+              <div className="upi-status-progress" aria-hidden="true">
+                <div className="upi-status-progress-bar" />
+              </div>
             </div>
           )}
 
           {status === 'success' && (
-            <div className="animate-fade-in" style={{ padding: '2rem 0' }}>
-              <div style={{ color: '#22c55e', marginBottom: '1rem' }}>
-                <CheckCircle2 size={64} style={{ margin: '0 auto' }} />
+            <div className="animate-fade-in upi-status-screen">
+              <div className="upi-success-wrap">
+                <div className="upi-success-ripple upi-success-ripple--one" />
+                <div className="upi-success-ripple upi-success-ripple--two" />
+                <div className="upi-success-mark">
+                  <CheckCircle2 size={68} />
+                </div>
               </div>
-              <h4 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>{t('payment.success')}</h4>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Redirecting to your invoice...</p>
+              <h4 className="upi-status-title">{t('payment.success')}</h4>
+              <p className="upi-status-subtitle">{t('upi.redirectingInvoice')}</p>
             </div>
           )}
         </div>
 
-        <div style={{ 
-          padding: '1rem', 
-          background: 'var(--bg-color)', 
-          fontSize: '0.75rem', 
-          textAlign: 'center',
-          color: 'var(--text-muted)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '4px'
-        }}>
-          <ShieldCheck size={14} /> Secured by Kisan Bandhu UPI Gateway
-        </div>
+        {status !== 'quantity' && status !== 'scan' && (
+          <div style={{ 
+            padding: '0.85rem 1rem', 
+            background: 'var(--bg-color)', 
+            fontSize: '0.75rem', 
+            textAlign: 'center',
+            color: 'var(--text-muted)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '4px'
+          }}>
+            <ShieldCheck size={14} /> {t('upi.securedFooter')}
+          </div>
+        )}
       </div>
 
       <style>{`
@@ -333,7 +364,19 @@ export const UPIMarketModal: React.FC<UPIMarketModalProps> = ({ listing, onSucce
           align-items: flex-start;
           justify-content: space-between;
           gap: 1rem;
-          margin-bottom: 1.25rem;
+          margin-bottom: 0.8rem;
+        }
+
+        .upi-market-modal-card {
+          margin: 0 auto;
+        }
+
+        .upi-qty-screen-fit {
+          display: grid;
+          gap: 0.75rem;
+          height: 100%;
+          align-content: start;
+          grid-template-rows: auto auto auto 1fr;
         }
 
         .upi-qty-title {
@@ -369,7 +412,7 @@ export const UPIMarketModal: React.FC<UPIMarketModalProps> = ({ listing, onSucce
           grid-template-columns: 44px 1fr 44px;
           align-items: center;
           gap: 0.75rem;
-          margin-bottom: 1rem;
+          margin-bottom: 0.65rem;
         }
 
         .upi-qty-stepper-btn {
@@ -414,9 +457,9 @@ export const UPIMarketModal: React.FC<UPIMarketModalProps> = ({ listing, onSucce
           background: rgba(255, 255, 255, 0.72);
           border: 1px solid rgba(42, 79, 51, 0.12);
           border-radius: 14px;
-          padding: 1rem;
+          padding: 0.85rem;
           box-shadow: 0 8px 24px rgba(16, 35, 29, 0.06);
-          margin: 1rem 0 1.25rem;
+          margin: 0.15rem 0 0.3rem;
         }
 
         .upi-qty-breakdown-row {
@@ -450,63 +493,51 @@ export const UPIMarketModal: React.FC<UPIMarketModalProps> = ({ listing, onSucce
           font-size: 1.15rem;
         }
 
-        .upi-seller-location {
+        .upi-qty-actions {
+          align-self: end;
           background: rgba(255, 255, 255, 0.72);
           border: 1px solid rgba(42, 79, 51, 0.12);
           border-radius: 14px;
-          padding: 1rem;
+          padding: 0.75rem;
           box-shadow: 0 8px 24px rgba(16, 35, 29, 0.06);
-          margin: 0 0 1.25rem;
-          text-align: left;
+          display: grid;
+          gap: 0.7rem;
         }
 
-        .upi-seller-location-head {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 0.75rem;
-          margin-bottom: 0.6rem;
-        }
-
-        .upi-seller-location-title {
+        .upi-qty-location-title {
           display: inline-flex;
           align-items: center;
-          gap: 0.45rem;
-          font-weight: 900;
+          gap: 0.4rem;
           color: var(--text-main);
-          font-size: 0.95rem;
+          font-size: 0.85rem;
+          font-weight: 800;
+          margin-bottom: 0.2rem;
         }
 
-        .upi-seller-location-link {
+        .upi-qty-location-address {
+          color: var(--text-muted);
+          font-size: 0.8rem;
+          font-weight: 600;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .upi-qty-action-buttons {
+          display: grid;
+          gap: 0.6rem;
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .upi-qty-map-btn,
+        .upi-qty-pay-btn {
+          width: 100%;
+          padding: 0.75rem 0.7rem;
           display: inline-flex;
           align-items: center;
-          gap: 0.35rem;
-          font-weight: 800;
-          font-size: 0.85rem;
-          color: var(--primary);
-          text-decoration: none;
-          padding: 0.25rem 0.4rem;
-          border-radius: 8px;
-        }
-
-        .upi-seller-location-link:hover {
-          background: rgba(47, 111, 62, 0.08);
-        }
-
-        .upi-seller-location-address {
-          color: var(--text-muted);
-          font-size: 0.9rem;
-          font-weight: 600;
-        }
-
-        .upi-seller-location-map {
-          margin-top: 0.85rem;
-          width: 100%;
-          height: 180px;
-          border-radius: 12px;
-          overflow: hidden;
-          border: 1px solid rgba(42, 79, 51, 0.12);
-          background: rgba(255, 255, 255, 0.75);
+          justify-content: center;
+          gap: 0.4rem;
+          font-size: 0.86rem;
         }
 
         .upi-seller-location-scan {
@@ -519,9 +550,29 @@ export const UPIMarketModal: React.FC<UPIMarketModalProps> = ({ listing, onSucce
         }
 
         .upi-pay-layout {
-          display: grid;
-          gap: 1rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.85rem;
           text-align: left;
+          height: 100%;
+          min-height: 0;
+          flex: 1;
+        }
+
+        .upi-pay-scroll {
+          overflow-y: auto;
+          padding-right: 0.2rem;
+          display: grid;
+          gap: 0.85rem;
+          min-height: 0;
+        }
+
+        .upi-pay-cta-wrap {
+          flex-shrink: 0;
+          padding-top: 0.15rem;
+          background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0.88) 32%);
+          position: sticky;
+          bottom: 0;
         }
 
         .upi-pay-card {
@@ -639,7 +690,200 @@ export const UPIMarketModal: React.FC<UPIMarketModalProps> = ({ listing, onSucce
           padding: 0.9rem 1rem;
           border-radius: 14px;
         }
+
+        .upi-status-screen {
+          padding: 2.1rem 0 1.4rem;
+          display: grid;
+          justify-items: center;
+          text-align: center;
+          gap: 0.8rem;
+        }
+
+        .upi-status-orbit {
+          width: 72px;
+          height: 72px;
+          border: 4px solid rgba(47, 111, 62, 0.2);
+          border-top-color: var(--primary);
+          border-radius: 999px;
+          animation: upiSpin 0.9s linear infinite;
+          position: relative;
+        }
+
+        .upi-status-orbit-dot {
+          position: absolute;
+          top: 6px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 8px;
+          height: 8px;
+          border-radius: 999px;
+          background: var(--primary);
+          box-shadow: 0 0 0 8px rgba(47, 111, 62, 0.13);
+        }
+
+        .upi-status-processing-wrap {
+          position: relative;
+          width: 96px;
+          height: 96px;
+          display: grid;
+          place-items: center;
+        }
+
+        .upi-status-glow {
+          position: absolute;
+          inset: 0;
+          border-radius: 999px;
+          background: radial-gradient(circle, rgba(47,111,62,0.28), rgba(47,111,62,0.04) 62%, transparent 78%);
+          animation: upiPulseGlow 1.5s ease-in-out infinite;
+        }
+
+        .upi-status-core-ring {
+          position: absolute;
+          width: 58px;
+          height: 58px;
+          border-radius: 999px;
+          border: 2px solid rgba(47, 111, 62, 0.28);
+          border-bottom-color: rgba(47, 111, 62, 0.06);
+          animation: upiSpinReverse 1.2s linear infinite;
+        }
+
+        .upi-status-title {
+          margin: 0;
+          font-size: 1.08rem;
+          font-weight: 800;
+          color: var(--text-main);
+        }
+
+        .upi-status-subtitle {
+          margin: 0;
+          color: var(--text-muted);
+          font-size: 0.9rem;
+          font-weight: 600;
+        }
+
+        .upi-status-progress {
+          width: min(280px, 82%);
+          height: 8px;
+          border-radius: 999px;
+          background: rgba(42, 79, 51, 0.12);
+          overflow: hidden;
+        }
+
+        .upi-status-progress-bar {
+          width: 55%;
+          height: 100%;
+          border-radius: 999px;
+          background: linear-gradient(90deg, #2f6f3e, #74a63b);
+          animation: upiProgress 1.2s ease-in-out infinite;
+        }
+
+        .upi-success-wrap {
+          position: relative;
+          width: 104px;
+          height: 104px;
+          display: grid;
+          place-items: center;
+        }
+
+        .upi-success-ripple {
+          position: absolute;
+          inset: 0;
+          border-radius: 999px;
+          border: 2px solid rgba(34, 197, 94, 0.3);
+          animation: upiSuccessRipple 1.8s ease-out infinite;
+        }
+
+        .upi-success-ripple--two {
+          animation-delay: 0.55s;
+        }
+
+        .upi-success-mark {
+          color: #22c55e;
+          animation: upiSuccessPop 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+          filter: drop-shadow(0 10px 16px rgba(34, 197, 94, 0.24));
+        }
+
+        @keyframes upiSpin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        @keyframes upiProgress {
+          0% {
+            transform: translateX(-120%);
+          }
+          100% {
+            transform: translateX(260%);
+          }
+        }
+
+        @keyframes upiPulseGlow {
+          0%, 100% {
+            transform: scale(0.92);
+            opacity: 0.75;
+          }
+          50% {
+            transform: scale(1.04);
+            opacity: 1;
+          }
+        }
+
+        @keyframes upiSpinReverse {
+          to {
+            transform: rotate(-360deg);
+          }
+        }
+
+        @keyframes upiSuccessPop {
+          0% {
+            opacity: 0;
+            transform: scale(0.6);
+          }
+          60% {
+            transform: scale(1.08);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        @keyframes upiSuccessRipple {
+          0% {
+            transform: scale(0.75);
+            opacity: 0.9;
+          }
+          100% {
+            transform: scale(1.22);
+            opacity: 0;
+          }
+        }
+
+        @keyframes upiModalPop {
+          0% {
+            opacity: 0;
+            transform: translateY(18px) scale(0.97);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        @media (max-width: 640px) {
+          .upi-market-modal-card {
+            width: 100%;
+            height: min(94vh, 700px) !important;
+          }
+
+          .upi-qty-action-buttons {
+            grid-template-columns: 1fr;
+          }
+        }
       `}</style>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };

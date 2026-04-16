@@ -56,7 +56,7 @@ export const Landing: React.FC = () => {
             <Tractor size={22} className="brand-tractor-icon" />
           </span>
           <span>
-            <strong>Kisan Bandhu</strong>
+            <strong>{t('brand.name')}</strong>
             <small>{t('brand.tagline')}</small>
           </span>
         </Link>

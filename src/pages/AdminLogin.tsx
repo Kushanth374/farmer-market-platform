@@ -31,13 +31,13 @@ export const AdminLogin: React.FC = () => {
   return (
     <div className="admin-login-wrap">
       <div className="admin-login-card card">
-        <div className="admin-login-brand" aria-label="Kisan Bandhu Admin">
+        <div className="admin-login-brand" aria-label={`${t('brand.name')} ${t('adminLogin.brandSubtitle')}`}>
           <span className="admin-login-brand-mark" aria-hidden="true">
             <Tractor size={18} />
           </span>
           <span className="admin-login-brand-text">
-            <strong>Kisan Bandhu</strong>
-            <small>Admin Portal</small>
+            <strong>{t('brand.name')}</strong>
+            <small>{t('adminLogin.brandSubtitle')}</small>
           </span>
         </div>
 
@@ -54,7 +54,7 @@ export const AdminLogin: React.FC = () => {
         <div className="admin-login-preview" aria-hidden="true">
           <div className="admin-login-preview-label">PIN</div>
           <div className="admin-login-preview-dots">{maskedPinPreview}</div>
-          <div className="admin-login-preview-hint">Enter admin PIN to continue</div>
+          <div className="admin-login-preview-hint">{t('adminLogin.previewHint')}</div>
         </div>
 
         <form onSubmit={handleSubmit}>

@@ -46,7 +46,7 @@ export default function App() {
       case '/market':
         return t('page.market');
       case '/orders':
-        return 'My Orders';
+        return t('page.orders');
       case '/dashboard':
         return t('page.dashboard');
       case '/admin':

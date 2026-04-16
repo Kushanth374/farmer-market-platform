@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Tractor, Sprout, Store, BarChart3, UserCircle, LogOut, Shield, Package } from 'lucide-react';
+import { Tractor, Sprout, Store, BarChart3, UserCircle, LogOut, Shield, Package, LogIn } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { LANGUAGE_OPTIONS, useTranslations } from '../i18n';
 
@@ -12,7 +12,7 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', borderBottom: '1px solid var(--border)' }}>
         <Tractor color="var(--primary)" size={32} className="brand-tractor-icon" />
-        <h1 className="heading-1 sidebar-brand-title" style={{ marginBottom: 0 }}>Kisan Bandhu</h1>
+        <h1 className="heading-1 sidebar-brand-title" style={{ marginBottom: 0 }}>{t('brand.name')}</h1>
       </div>
 
       <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)' }}>
@@ -26,6 +26,10 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
             <UserCircle size={20} />
             {t('nav.registration')}
           </NavLink>
+          <NavLink to="/login" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={onClose}>
+            <LogIn size={20} />
+            {t('nav.login')}
+          </NavLink>
           <NavLink to="/schemes" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={onClose}>
             <Sprout size={20} />
             {t('nav.schemes')}
@@ -36,7 +40,7 @@ export const Sidebar: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ is
           </NavLink>
           <NavLink to="/orders" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={onClose}>
             <Package size={20} />
-            My Orders
+            {t('nav.orders')}
           </NavLink>
           <NavLink to="/dashboard" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={onClose}>
             <BarChart3 size={20} />

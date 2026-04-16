@@ -78,7 +78,7 @@ export const Market: React.FC = () => {
       return;
     }
 
-    const message = encodeURIComponent(`Hello, I am interested in your ${crop} listing on Kisan Bandhu.`);
+    const message = encodeURIComponent(t('market.whatsappMessage', { crop }));
     window.open(`https://wa.me/${digits}?text=${message}`, '_blank');
   };
 
@@ -218,7 +218,7 @@ export const Market: React.FC = () => {
                   </button>
                 </div>
                 <button className="btn w-full" type="button" onClick={() => handlePlaceOrder(item)}>
-                  <Receipt size={16} /> Place Order
+                  <Receipt size={16} /> {t('market.placeOrder')}
                 </button>
               </div>
             ))}
@@ -254,7 +254,7 @@ export const Market: React.FC = () => {
               </div>
               <div className="input-group mb-0">
                 <label className="input-label">{t('market.expectedPrice')}</label>
-                <input type="number" className="input-field" placeholder="Rs" required value={newListing.price} onChange={(e) => setNewListing({ ...newListing, price: e.target.value })} />
+                <input type="number" className="input-field" placeholder={t('market.currencyPlaceholder')} required value={newListing.price} onChange={(e) => setNewListing({ ...newListing, price: e.target.value })} />
               </div>
             </div>
             <div className="input-group mb-6">

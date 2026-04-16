@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Download, MapPin, Printer, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { MarketListing, User as UserType, useAppContext } from '../context/AppContext';
 import { useTranslations } from '../i18n';
@@ -80,9 +81,32 @@ export const BillModal: React.FC<BillModalProps> = ({ listing, customer, selecte
     }
   };
 
-  return (
-    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 2000 }}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ width: 'min(900px, 95%)', padding: '0', overflow: 'hidden' }}>
+  const modalContent = (
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 2000,
+        display: 'grid',
+        placeItems: 'center',
+        padding: '1rem',
+        background: 'rgba(15, 30, 20, 0.65)',
+        backdropFilter: 'blur(8px)',
+      }}
+    >
+      <div
+        className="modal-content"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: 'min(900px, 95%)',
+          maxHeight: 'calc(100vh - 2rem)',
+          padding: '0',
+          overflow: 'hidden',
+          margin: '0 auto',
+        }}
+      >
         <div className="no-print" style={{ 
           padding: '1rem 1.5rem', 
           background: 'white', 
@@ -95,7 +119,7 @@ export const BillModal: React.FC<BillModalProps> = ({ listing, customer, selecte
           zIndex: 10
         }}>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Printer size={20} /> Checkout Bill
+            <Printer size={20} /> {t('bill.checkoutTitle')}
           </h2>
           <div className="flex gap-2">
             <button
@@ -113,7 +137,7 @@ export const BillModal: React.FC<BillModalProps> = ({ listing, customer, selecte
                 cursor: isDownloading ? 'not-allowed' : 'pointer',
               }}
             >
-              <Download size={16} /> {isDownloading ? 'Preparing PDF…' : t('bill.downloadPdf')}
+              <Download size={16} /> {isDownloading ? t('bill.generatingPdf') : t('bill.downloadPdf')}
             </button>
             <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
               <X size={24} />
@@ -144,7 +168,7 @@ export const BillModal: React.FC<BillModalProps> = ({ listing, customer, selecte
             }}>
               <div>
                 <h1 style={{ fontSize: '32px', fontWeight: 900, margin: '0 0 4px 0', letterSpacing: '-0.02em', color: '#74a63b' }}>KISAN BANDHU</h1>
-                <p style={{ margin: 0, opacity: 0.85, fontSize: '13px' }}>Digital Empowerment for Modern Agriculture</p>
+                <p style={{ margin: 0, opacity: 0.85, fontSize: '13px' }}>{t('bill.headerTagline')}</p>
                 <div style={{ marginTop: '15px' }}>
                   <p style={{ margin: '2px 0' }}>Plot 14, Baikampady Industrial Area, Mangaluru, KA - 575011</p>
                   <p style={{ margin: '2px 0' }}>support@kisanbandhu.com | +91 824 245 6789</p>
@@ -158,10 +182,10 @@ export const BillModal: React.FC<BillModalProps> = ({ listing, customer, selecte
                   border: '1px solid rgba(255,255,255,0.2)',
                   display: 'inline-block'
                 }}>
-                  <p style={{ margin: 0, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '2px' }}>Tax Invoice</p>
+                  <p style={{ margin: 0, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '2px' }}>{t('bill.taxInvoice')}</p>
                   <p style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>#{orderNumber}</p>
                 </div>
-                <p style={{ marginTop: '10px', fontSize: '13px' }}>Date: <strong>{today}</strong></p>
+                <p style={{ marginTop: '10px', fontSize: '13px' }}>{t('bill.date')}: <strong>{today}</strong></p>
               </div>
             </div>
 
@@ -174,10 +198,10 @@ export const BillModal: React.FC<BillModalProps> = ({ listing, customer, selecte
                   border: '1px solid #e2e8f0',
                   position: 'relative'
                 }}>
-                  <div style={{ color: '#2f6f3e', fontWeight: 800, fontSize: '11px', textTransform: 'uppercase', marginBottom: '12px', borderLeft: '4px solid #74a63b', paddingLeft: '10px' }}>Bill To Customer</div>
+                  <div style={{ color: '#2f6f3e', fontWeight: 800, fontSize: '11px', textTransform: 'uppercase', marginBottom: '12px', borderLeft: '4px solid #74a63b', paddingLeft: '10px' }}>{t('bill.billToCustomer')}</div>
                   <h2 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 4px 0' }}>{customer.name}</h2>
                   <p style={{ margin: '2px 0', color: '#64748b' }}>{customer.address}</p>
-                  <p style={{ margin: '8px 0 0 0', fontWeight: 600 }}>Ph: {customer.phone}</p>
+                  <p style={{ margin: '8px 0 0 0', fontWeight: 600 }}>{t('bill.phoneShort')}: {customer.phone}</p>
                   
                   {razorpayPaymentId && (
                     <div style={{ 
@@ -192,25 +216,25 @@ export const BillModal: React.FC<BillModalProps> = ({ listing, customer, selecte
                       width: 'fit-content'
                     }}>
                       <div style={{ color: '#22c55e' }}><CheckCircle2 size={18} /></div>
-                      <span style={{ fontWeight: 800, color: '#166534', fontSize: '11px' }}>PAYMENT SECURED • PAID</span>
+                      <span style={{ fontWeight: 800, color: '#166534', fontSize: '11px' }}>{t('bill.paymentSecuredPaid')}</span>
                     </div>
                   )}
                 </div>
 
                 <div style={{ border: '1px solid #f1f5f9', padding: '15px' }}>
-                  <div style={{ color: '#64748b', fontWeight: 800, fontSize: '11px', textTransform: 'uppercase', marginBottom: '12px' }}>Transaction Info</div>
+                  <div style={{ color: '#64748b', fontWeight: 800, fontSize: '11px', textTransform: 'uppercase', marginBottom: '12px' }}>{t('bill.transactionInfo')}</div>
                   <div style={{ display: 'grid', gap: '8px' }}>
                     <div className="flex justify-between">
-                      <span style={{ color: '#94a3b8' }}>Invoice No:</span>
+                      <span style={{ color: '#94a3b8' }}>{t('bill.invoiceNo')}:</span>
                       <span style={{ fontWeight: 700 }}>{invoiceNo}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span style={{ color: '#94a3b8' }}>Payment Mode:</span>
+                      <span style={{ color: '#94a3b8' }}>{t('bill.paymentMode')}:</span>
                       <span style={{ fontWeight: 700 }}>UPI (kushanthgowda261@okaxis)</span>
                     </div>
                     {razorpayPaymentId && (
                       <div className="flex justify-between">
-                        <span style={{ color: '#94a3b8' }}>Transaction ID:</span>
+                        <span style={{ color: '#94a3b8' }}>{t('payment.transactionId')}:</span>
                         <span style={{ fontWeight: 700, color: '#2f6f3e' }}>{razorpayPaymentId}</span>
                       </div>
                     )}
@@ -222,18 +246,18 @@ export const BillModal: React.FC<BillModalProps> = ({ listing, customer, selecte
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ background: '#1a3d24', color: 'white' }}>
-                      <th style={{ padding: '15px', textAlign: 'left' }}>Item Description</th>
+                      <th style={{ padding: '15px', textAlign: 'left' }}>{t('bill.itemDescription')}</th>
                       <th style={{ padding: '15px', textAlign: 'center' }}>HSN Code</th>
                       <th style={{ padding: '15px', textAlign: 'center' }}>Qty</th>
                       <th style={{ padding: '15px', textAlign: 'right' }}>Price/Unit</th>
-                      <th style={{ padding: '15px', textAlign: 'right' }}>Amount</th>
+                      <th style={{ padding: '15px', textAlign: 'right' }}>{t('upi.amount')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                       <td style={{ padding: '20px 15px' }}>
                         <div style={{ fontWeight: 800, fontSize: '14px', color: '#0f172a' }}>{listing.crop}</div>
-                        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>Produced by: {listing.farmer}</div>
+                        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>{t('bill.producedBy', { name: listing.farmer })}</div>
                       </td>
                       <td style={{ padding: '20px 15px', textAlign: 'center', color: '#64748b' }}>1006.19</td>
                       <td style={{ padding: '20px 15px', textAlign: 'center', fontWeight: 700 }}>{selectedQty}</td>
@@ -242,10 +266,10 @@ export const BillModal: React.FC<BillModalProps> = ({ listing, customer, selecte
                     </tr>
                     <tr style={{ background: '#f8fafc' }}>
                       <td colSpan={3} style={{ padding: '15px' }}>
-                        <div style={{ color: '#64748b', fontSize: '10px', textTransform: 'uppercase', marginBottom: '4px' }}>Amount in Words</div>
+                        <div style={{ color: '#64748b', fontSize: '10px', textTransform: 'uppercase', marginBottom: '4px' }}>{t('bill.amountInWords')}</div>
                         <div style={{ fontWeight: 700, fontStyle: 'italic', color: '#1a3d24' }}>INR {numberToWords(totalAmount)} Only</div>
                       </td>
-                      <td style={{ padding: '15px', textAlign: 'right', color: '#64748b', fontWeight: 700 }}>Grand Total</td>
+                      <td style={{ padding: '15px', textAlign: 'right', color: '#64748b', fontWeight: 700 }}>{t('bill.grandTotal')}</td>
                       <td style={{ padding: '15px', textAlign: 'right', fontSize: '20px', fontWeight: 900, color: '#2f6f3e' }}>₹{totalAmount.toLocaleString('en-IN')}.00</td>
                     </tr>
                   </tbody>
@@ -256,10 +280,10 @@ export const BillModal: React.FC<BillModalProps> = ({ listing, customer, selecte
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#2f6f3e', marginBottom: '10px' }}>
                     <ShieldCheck size={16} />
-                    <span style={{ fontWeight: 800, fontSize: '11px' }}>VERIFIED TRANSACTION</span>
+                    <span style={{ fontWeight: 800, fontSize: '11px' }}>{t('bill.verifiedTransaction')}</span>
                   </div>
                   <p style={{ fontSize: '10px', color: '#94a3b8', maxWidth: '300px' }}>
-                    This is an electronically generated invoice valid for the purchase made on Kisan Bandhu. Digital signature not required.
+                    {t('bill.eInvoiceNote')}
                   </p>
                 </div>
                 <div style={{ textAlign: 'center' }}>
@@ -276,7 +300,7 @@ export const BillModal: React.FC<BillModalProps> = ({ listing, customer, selecte
                     color: '#2f6f3e',
                     opacity: 0.8
                   }}>Kisan Bandhu</div>
-                  <p style={{ margin: 0, fontWeight: 800, textTransform: 'uppercase', fontSize: '10px', color: '#64748b' }}>Authorised Seal</p>
+                  <p style={{ margin: 0, fontWeight: 800, textTransform: 'uppercase', fontSize: '10px', color: '#64748b' }}>{t('bill.authorisedSeal')}</p>
                 </div>
               </div>
             </div>
@@ -285,9 +309,9 @@ export const BillModal: React.FC<BillModalProps> = ({ listing, customer, selecte
             <div style={{ background: '#f8fafc', padding: '15px 40px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8' }}>
                 <MapPin size={14} />
-                <span style={{ fontSize: '10px' }}>Pickup: {sellerAddress}</span>
+                <span style={{ fontSize: '10px' }}>{t('bill.pickup')}: {sellerAddress}</span>
               </div>
-              <p style={{ margin: 0, fontSize: '10px', color: '#cbd5e1' }}>© 2026 Kisan Bandhu Industries Ltd.</p>
+              <p style={{ margin: 0, fontSize: '10px', color: '#cbd5e1' }}>{t('bill.companyFooter')}</p>
             </div>
           </div>
         </div>
@@ -311,4 +335,6 @@ export const BillModal: React.FC<BillModalProps> = ({ listing, customer, selecte
       `}</style>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
