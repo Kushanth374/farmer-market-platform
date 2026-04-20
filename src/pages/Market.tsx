@@ -148,14 +148,14 @@ export const Market: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="market-header flex items-center justify-between mb-6">
         <div>
           <h2 className="heading-1">{t('market.title')}</h2>
           <p className="text-muted" style={{ fontSize: '0.85rem' }}>
             {isMarketLive ? t('market.liveSync') : t('market.offlineSync')}
           </p>
         </div>
-        <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: '8px', border: '1px solid var(--border)', padding: '4px' }}>
+        <div className="market-tab-switch">
           <button className={`btn ${activeTab === 'buy' ? '' : 'btn-secondary'}`} style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: 'none', boxShadow: 'none' }} onClick={() => setActiveTab('buy')}>
             {t('market.buyerView')}
           </button>

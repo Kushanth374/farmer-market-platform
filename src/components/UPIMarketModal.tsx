@@ -109,8 +109,7 @@ export const UPIMarketModal: React.FC<UPIMarketModalProps> = ({ listing, onSucce
         animation: 'upiModalPop 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both',
         height: 'min(92vh, 720px)',
         display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden'
+        flexDirection: 'column'
       }}
       >
         <div style={{

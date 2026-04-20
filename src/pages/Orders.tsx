@@ -39,7 +39,7 @@ export const Orders: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="orders-header flex items-center justify-between mb-6">
         <div>
           <h2 className="heading-1">{t('page.orders')}</h2>
           <p className="text-muted" style={{ fontSize: '0.9rem' }}>

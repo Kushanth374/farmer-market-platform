@@ -60,6 +60,95 @@ body {
   transition: background-color 0.3s, color 0.3s;
 }
 
+body.mobile-optimized {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+summary,
+.click-animate {
+  transform-origin: center;
+  transition: transform 0.18s ease, box-shadow 0.24s ease, filter 0.24s ease;
+  will-change: transform;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+button:active,
+a:active,
+[role="button"]:active,
+input[type="button"]:active,
+input[type="submit"]:active,
+input[type="reset"]:active,
+summary:active,
+.click-animate:active {
+  transform: scale(0.97);
+  filter: saturate(1.06);
+}
+
+.click-press-animate {
+  animation: clickPressPulse 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.click-effect-layer {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.click-target-ripple {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  background:
+    radial-gradient(circle, rgba(251, 255, 241, 0.98) 0%, rgba(205, 244, 168, 0.8) 18%, rgba(114, 183, 73, 0.42) 46%, rgba(47, 111, 62, 0.14) 68%, transparent 100%);
+  mix-blend-mode: screen;
+  filter: blur(0.25px);
+  animation: clickTargetRipple 0.68s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.click-target-halo {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  border: 1.5px solid rgba(220, 255, 198, 0.9);
+  box-shadow:
+    0 0 0 1px rgba(112, 176, 75, 0.22) inset,
+    0 0 20px rgba(176, 231, 124, 0.28);
+  animation: clickTargetHalo 0.72s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.click-target-sheen {
+  inset: -35% auto -35% -25%;
+  width: 44%;
+  background: linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, 0.16) 36%, rgba(246, 255, 236, 0.8) 50%, rgba(255, 255, 255, 0.14) 64%, transparent 100%);
+  transform: translateX(-160%) skewX(-24deg);
+  opacity: 0;
+  mix-blend-mode: screen;
+  animation: clickTargetSheen 0.62s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.click-burst,
+.click-burst-glow,
+.click-burst-ring,
+.click-burst-echo,
+.click-burst-spark {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+}
+
 .app-shell-layer {
   position: relative;
   z-index: 1;
@@ -319,6 +408,7 @@ a {
   justify-content: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
+  min-height: 2.9rem;
   background: linear-gradient(135deg, #2f6f3e, #74a63b);
   color: white;
   border: none;
@@ -388,6 +478,73 @@ a {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes clickBurst {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.35);
+    box-shadow: 0 0 0 0 rgba(116, 166, 59, 0.26);
+  }
+  70% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(5.5);
+    box-shadow: 0 0 0 18px rgba(116, 166, 59, 0);
+  }
+}
+
+@keyframes clickPressPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(116, 166, 59, 0);
+  }
+  35% {
+    transform: scale(0.965);
+    box-shadow: 0 0 0 8px rgba(116, 166, 59, 0.12), 0 14px 28px rgba(47, 111, 62, 0.12);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(116, 166, 59, 0);
+  }
+}
+
+@keyframes clickTargetRipple {
+  0% {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(12);
+  }
+}
+
+@keyframes clickTargetHalo {
+  0% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(16);
+  }
+}
+
+@keyframes clickTargetSheen {
+  0% {
+    opacity: 0;
+    transform: translateX(-160%) skewX(-24deg);
+  }
+  35% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(320%) skewX(-24deg);
+  }
 }
 
 @keyframes globalFloat {
@@ -511,6 +668,7 @@ a {
 .input-field {
   width: 100%;
   padding: 0.875rem 1rem;
+  min-height: 3rem;
   background: rgba(255, 255, 255, 0.7);
   border: 1px solid rgba(42, 79, 51, 0.14);
   border-radius: 8px;
@@ -589,6 +747,18 @@ a {
     backdrop-filter: blur(2px);
     z-index: 35;
   }
+
+  body {
+    line-height: 1.45;
+  }
+
+  .btn,
+  .input-field,
+  .landing-nav-cta,
+  .hero-primary-link,
+  .hero-secondary-link {
+    min-height: 3rem;
+  }
 }
 
 .dashboard-page {
@@ -636,6 +806,10 @@ a {
     padding: 1rem;
   }
 
+  .card {
+    border-radius: 1.1rem;
+  }
+
   .top-nav-group,
   .top-nav-actions {
     width: 100%;
@@ -652,6 +826,24 @@ a {
 
   .top-nav-actions {
     justify-content: flex-end;
+  }
+
+  .nav-item {
+    padding: 1rem 1.25rem;
+  }
+
+  .market-header,
+  .orders-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .market-tab-switch {
+    width: 100%;
+  }
+
+  .market-tab-switch > button {
+    flex: 1;
   }
 
 
@@ -1015,6 +1207,19 @@ a {
 .landing-nav-pro a {
   color: #355940;
   font-weight: 600;
+}
+
+.market-header,
+.orders-header {
+  gap: 1rem;
+}
+
+.market-tab-switch {
+  display: flex;
+  background: var(--surface);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  padding: 4px;
 }
 
 .landing-nav-cta {
@@ -1605,6 +1810,26 @@ a {
     border-radius: 1.4rem;
   }
 
+  .landing-nav-pro {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .landing-nav-pro a,
+  .landing-nav-cta,
+  .hero-actions-pro > *,
+  .cta-actions-pro > * {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .hero-actions-pro,
+  .cta-actions-pro {
+    flex-direction: column;
+  }
+
   .hero-copy-pro h1,
   .section-heading-pro h2,
   .story-card-pro h2,
@@ -1639,6 +1864,15 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  button,
+  a,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  summary,
+  .click-animate,
+  .click-burst,
   .global-nature-bg::before,
   .global-nature-bg::after,
   .greenery-mist-layer,
@@ -1660,6 +1894,13 @@ a {
   .hero-photo-panel {
     animation: none !important;
     transform: none !important;
+  }
+
+  .click-target-ripple,
+  .click-target-halo,
+  .click-target-sheen,
+  .click-press-animate {
+    animation: none !important;
   }
 }
 

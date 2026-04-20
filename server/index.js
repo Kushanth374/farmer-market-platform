@@ -1,14 +1,30 @@
 import express from "express";
 import path from "path";
+import helmet from "helmet";
+import compression from "compression";
+import crypto from "crypto";
 import { fileURLToPath } from "url";
 import { getDatabase, getDatabaseFilePath, resetMarketListings, updateDatabase } from "./database.js";
 
 const app = express();
+app.use(helmet({
+  contentSecurityPolicy: false, // Disabled for demo simplicity
+}));
+app.use(compression());
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..");
 const distDirectory = path.join(projectRoot, "dist");
 const port = Number(process.env.PORT || 3001);
+
+app.use((req, _res, next) => {
+  // Vercel catch-all functions can forward the path without the `/api` prefix.
+  if (process.env.VERCEL && !req.url.startsWith("/api")) {
+    req.url = `/api${req.url.startsWith("/") ? req.url : `/${req.url}`}`;
+  }
+
+  next();
+});
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -23,6 +39,57 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
+
+const asyncRoute = (handler) => (req, res, next) => {
+  Promise.resolve(handler(req, res, next)).catch(next);
+};
+
+const PASSWORD_HASH_PREFIX = "scrypt";
+const SCRYPT_KEY_LENGTH = 64;
+
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const derivedKey = crypto.scryptSync(password, salt, SCRYPT_KEY_LENGTH).toString("hex");
+  return `${PASSWORD_HASH_PREFIX}$${salt}$${derivedKey}`;
+}
+
+function isHashedPassword(value = "") {
+  return typeof value === "string" && value.startsWith(`${PASSWORD_HASH_PREFIX}$`);
+}
+
+function verifyPassword(password, storedPassword = "") {
+  if (!isHashedPassword(storedPassword)) {
+    return false;
+  }
+
+  const [, salt, expectedHash] = storedPassword.split("$");
+  if (!salt || !expectedHash) {
+    return false;
+  }
+
+  const actualHash = crypto.scryptSync(password, salt, SCRYPT_KEY_LENGTH);
+  const expectedBuffer = Buffer.from(expectedHash, "hex");
+  if (expectedBuffer.length !== actualHash.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(expectedBuffer, actualHash);
+}
+
+function sanitizeAccount(account) {
+  if (!account) {
+    return account;
+  }
+
+  const { password: _password, ...safeAccount } = account;
+  return safeAccount;
+}
+
+function sanitizeAccounts(accounts = {}) {
+  return Object.fromEntries(
+    Object.entries(accounts).map(([phone, account]) => [phone, sanitizeAccount(account)])
+  );
+}
 
 const mandis = [
   { id: 1, name: "Lasalgaon", city: "Nashik", state: "Maharashtra", commodities: ["Onion"] },
@@ -135,24 +202,24 @@ function normalizeMarketListing(listing) {
   };
 }
 
-function getMarketListings() {
-  return getDatabase().marketListings;
+async function getMarketListings() {
+  return (await getDatabase()).marketListings;
 }
 
-function getAccounts() {
-  return getDatabase().accounts;
+async function getAccounts() {
+  return (await getDatabase()).accounts;
 }
 
-function getFarmers() {
-  return getDatabase().farmers;
+async function getFarmers() {
+  return (await getDatabase()).farmers;
 }
 
-function getBuyers() {
-  return getDatabase().buyers;
+async function getBuyers() {
+  return (await getDatabase()).buyers;
 }
 
-function getOrders() {
-  return getDatabase().orders || [];
+async function getOrders() {
+  return (await getDatabase()).orders || [];
 }
 
 function normalizeOrder(order) {
@@ -304,22 +371,22 @@ app.get("/api/market-intelligence", (req, res) => {
   });
 });
 
-app.get("/api/bootstrap", (_req, res) => {
+app.get("/api/bootstrap", asyncRoute(async (_req, res) => {
   res.json({
     marketSummary: getMarketSummary(),
-    marketListings: getMarketListings().map(normalizeMarketListing),
+    marketListings: (await getMarketListings()).map(normalizeMarketListing),
     topSignal: getTopSignal(),
   });
-});
+}));
 
-app.get("/api/market-listings", (_req, res) => {
+app.get("/api/market-listings", asyncRoute(async (_req, res) => {
   res.json({
-    listings: getMarketListings().map(normalizeMarketListing),
+    listings: (await getMarketListings()).map(normalizeMarketListing),
     lastUpdated: new Date().toISOString(),
   });
-});
+}));
 
-app.post("/api/market-listings", (req, res) => {
+app.post("/api/market-listings", asyncRoute(async (req, res) => {
   const { crop, qty, price, details, farmer, ownerPhone, address, rating, image } = req.body || {};
 
   if (!crop || !qty || !price || !farmer || !ownerPhone) {
@@ -339,14 +406,14 @@ app.post("/api/market-listings", (req, res) => {
     image,
   });
 
-  updateDatabase((db) => {
+  await updateDatabase((db) => {
     db.marketListings = [nextListing, ...db.marketListings];
   });
   res.status(201).json({ listing: nextListing });
-});
+}));
 
-app.put("/api/market-listings/:id", (req, res) => {
-  const marketListings = getMarketListings();
+app.put("/api/market-listings/:id", asyncRoute(async (req, res) => {
+  const marketListings = await getMarketListings();
   const index = marketListings.findIndex((listing) => String(listing.id) === req.params.id);
   if (index === -1) {
     return res.status(404).json({ message: "Listing not found" });
@@ -359,42 +426,44 @@ app.put("/api/market-listings/:id", (req, res) => {
     id: existing.id,
   });
 
-  updateDatabase((db) => {
+  await updateDatabase((db) => {
     db.marketListings[index] = updated;
   });
   res.json({ listing: updated });
-});
+}));
 
-app.delete("/api/market-listings/:id", (req, res) => {
-  const marketListings = getMarketListings();
+app.delete("/api/market-listings/:id", asyncRoute(async (req, res) => {
+  const marketListings = await getMarketListings();
   const existing = marketListings.find((listing) => String(listing.id) === req.params.id);
   if (!existing) {
     return res.status(404).json({ message: "Listing not found" });
   }
 
-  updateDatabase((db) => {
+  await updateDatabase((db) => {
     db.marketListings = db.marketListings.filter((listing) => String(listing.id) !== req.params.id);
   });
   res.status(204).send();
-});
+}));
 
-app.post("/api/market-listings/reset", (_req, res) => {
-  const listings = resetMarketListings().map(normalizeMarketListing);
+app.post("/api/market-listings/reset", asyncRoute(async (_req, res) => {
+  const listings = (await resetMarketListings()).map(normalizeMarketListing);
   res.json({ listings });
-});
+}));
 
-app.get("/api/accounts", (_req, res) => {
+app.get("/api/accounts", asyncRoute(async (_req, res) => {
+  const database = await getDatabase();
   res.json({
-    accounts: getAccounts(),
+    accounts: sanitizeAccounts(await getAccounts()),
     databaseFile: getDatabaseFilePath(),
-    lastUpdated: getDatabase().updatedAt,
+    lastUpdated: database.updatedAt,
   });
-});
+}));
 
-app.get("/api/orders", (req, res) => {
+app.get("/api/orders", asyncRoute(async (req, res) => {
   const buyerPhone = String(req.query.buyerPhone || "").trim();
   const sellerPhone = String(req.query.sellerPhone || "").trim();
-  let orders = getOrders().map(normalizeOrder);
+  const database = await getDatabase();
+  let orders = (await getOrders()).map(normalizeOrder);
 
   if (buyerPhone) {
     orders = orders.filter((o) => o.buyerPhone === buyerPhone);
@@ -405,10 +474,10 @@ app.get("/api/orders", (req, res) => {
   }
 
   orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  res.json({ orders, lastUpdated: getDatabase().updatedAt });
-});
+  res.json({ orders, lastUpdated: database.updatedAt });
+}));
 
-app.post("/api/orders", (req, res) => {
+app.post("/api/orders", asyncRoute(async (req, res) => {
   const { buyerPhone, sellerPhone, listingId, crop, qty, unitPrice, totalPrice, txId, sellerName, sellerAddress } = req.body || {};
 
   if (!buyerPhone || !sellerPhone || !crop || !qty || !txId) {
@@ -431,14 +500,14 @@ app.post("/api/orders", (req, res) => {
     createdAt: new Date().toISOString(),
   });
 
-  updateDatabase((db) => {
+  await updateDatabase((db) => {
     db.orders = [nextOrder, ...(db.orders || [])];
   });
 
   res.status(201).json({ order: nextOrder });
-});
+}));
 
-app.post("/api/accounts/register", (req, res) => {
+app.post("/api/accounts/register", asyncRoute(async (req, res) => {
   const { name, phone, address, password, landSize, primaryCrop } = req.body || {};
   const normalizedPhone = String(phone || "").trim();
 
@@ -450,37 +519,55 @@ app.post("/api/accounts/register", (req, res) => {
     name: String(name).trim(),
     phone: normalizedPhone,
     address: String(address).trim(),
-    password: String(password),
+    password: hashPassword(String(password)),
     landSize: String(landSize).trim(),
     primaryCrop: String(primaryCrop).trim(),
   };
 
-  updateDatabase((db) => {
+  await updateDatabase((db) => {
     db.accounts[normalizedPhone] = account;
   });
 
-  res.status(201).json({ account });
-});
+  res.status(201).json({ account: sanitizeAccount(account) });
+}));
 
-app.post("/api/accounts/login", (req, res) => {
+app.post("/api/accounts/login", asyncRoute(async (req, res) => {
   const { phone, password } = req.body || {};
   const normalizedPhone = String(phone || "").trim();
-  const account = getAccounts()[normalizedPhone];
+  const account = (await getAccounts())[normalizedPhone];
 
   if (!account) {
     return res.status(404).json({ message: "Account not found", code: "not_found" });
   }
 
-  if (account.password !== password) {
+  const plainPassword = String(password || "");
+  const storedPassword = String(account.password || "");
+  const isLegacyPasswordMatch = !isHashedPassword(storedPassword) && storedPassword === plainPassword;
+  const isHashedPasswordMatch = verifyPassword(plainPassword, storedPassword);
+
+  if (!isLegacyPasswordMatch && !isHashedPasswordMatch) {
     return res.status(401).json({ message: "Invalid password", code: "invalid_password" });
   }
 
-  res.json({ account });
-});
+  if (isLegacyPasswordMatch) {
+    const upgradedAccount = {
+      ...account,
+      password: hashPassword(plainPassword),
+    };
 
-app.put("/api/accounts/:phone", (req, res) => {
+    await updateDatabase((db) => {
+      db.accounts[normalizedPhone] = upgradedAccount;
+    });
+
+    return res.json({ account: sanitizeAccount(upgradedAccount) });
+  }
+
+  res.json({ account: sanitizeAccount(account) });
+}));
+
+app.put("/api/accounts/:phone", asyncRoute(async (req, res) => {
   const normalizedPhone = String(req.params.phone || "").trim();
-  const accounts = getAccounts();
+  const accounts = await getAccounts();
   const existing = accounts[normalizedPhone];
 
   if (!existing) {
@@ -493,35 +580,40 @@ app.put("/api/accounts/:phone", (req, res) => {
     phone: normalizedPhone,
   };
 
-  updateDatabase((db) => {
+  if (Object.prototype.hasOwnProperty.call(req.body || {}, "password")) {
+    const nextPassword = String(req.body.password || "");
+    updatedAccount.password = nextPassword ? hashPassword(nextPassword) : existing.password;
+  }
+
+  await updateDatabase((db) => {
     db.accounts[normalizedPhone] = updatedAccount;
   });
 
-  res.json({ account: updatedAccount });
-});
+  res.json({ account: sanitizeAccount(updatedAccount) });
+}));
 
-app.delete("/api/accounts/:phone", (req, res) => {
+app.delete("/api/accounts/:phone", asyncRoute(async (req, res) => {
   const normalizedPhone = String(req.params.phone || "").trim();
-  const accounts = getAccounts();
+  const accounts = await getAccounts();
 
   if (!accounts[normalizedPhone]) {
     return res.status(404).json({ message: "Account not found" });
   }
 
-  updateDatabase((db) => {
+  await updateDatabase((db) => {
     delete db.accounts[normalizedPhone];
     db.marketListings = db.marketListings.filter((listing) => listing.ownerPhone !== normalizedPhone);
   });
 
   res.status(204).send();
-});
+}));
 
-app.post("/api/auth/signup", (req, res) => {
+app.post("/api/auth/signup", asyncRoute(async (req, res) => {
   const { role, name, email } = req.body;
   const id = `${role}-${Date.now()}`;
 
   if (role === "farmer") {
-    updateDatabase((db) => {
+    await updateDatabase((db) => {
       db.farmers[id] = {
         id,
         role,
@@ -531,17 +623,17 @@ app.post("/api/auth/signup", (req, res) => {
       };
     });
   } else {
-    updateDatabase((db) => {
+    await updateDatabase((db) => {
       db.buyers[id] = { id, role, name, email };
     });
   }
 
   res.json({ userId: id, role });
-});
+}));
 
-app.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", asyncRoute(async (req, res) => {
   const { role, identifier } = req.body;
-  const store = role === "farmer" ? getFarmers() : getBuyers();
+  const store = role === "farmer" ? await getFarmers() : await getBuyers();
   const existing = Object.values(store).find((item) => item.email === identifier || item.name === identifier);
 
   if (existing) {
@@ -550,7 +642,7 @@ app.post("/api/auth/login", (req, res) => {
 
   if (role === "farmer") {
     const id = `farmer-demo-${Date.now()}`;
-    updateDatabase((db) => {
+    await updateDatabase((db) => {
       db.farmers[id] = {
         id,
         role,
@@ -563,14 +655,14 @@ app.post("/api/auth/login", (req, res) => {
   }
 
   const id = `buyer-demo-${Date.now()}`;
-  updateDatabase((db) => {
+  await updateDatabase((db) => {
     db.buyers[id] = { id, role, name: "Buyer", email: identifier };
   });
   return res.json({ userId: id, role });
-});
+}));
 
-app.get("/api/farmer/:id", (req, res) => {
-  const farmer = getFarmers()[req.params.id];
+app.get("/api/farmer/:id", asyncRoute(async (req, res) => {
+  const farmer = (await getFarmers())[req.params.id];
   if (!farmer) {
     return res.status(404).json({ message: "Farmer not found" });
   }
@@ -590,12 +682,12 @@ app.get("/api/farmer/:id", (req, res) => {
     topSignal: getTopSignal(),
     marketSummary: getMarketSummary(),
     mandiIntelligence: getMandiIntelligence(),
-    marketListings: getMarketListings().map(normalizeMarketListing),
+    marketListings: (await getMarketListings()).map(normalizeMarketListing),
   });
-});
+}));
 
-app.put("/api/farmer/:id/profile", (req, res) => {
-  const farmer = getFarmers()[req.params.id];
+app.put("/api/farmer/:id/profile", asyncRoute(async (req, res) => {
+  const farmer = (await getFarmers())[req.params.id];
   if (!farmer) {
     return res.status(404).json({ message: "Farmer not found" });
   }
@@ -605,7 +697,7 @@ app.put("/api/farmer/:id/profile", (req, res) => {
     ...req.body,
   };
 
-  updateDatabase((db) => {
+  await updateDatabase((db) => {
     db.farmers[req.params.id] = farmer;
   });
 
@@ -616,7 +708,7 @@ app.put("/api/farmer/:id/profile", (req, res) => {
     matchedLoans: getMatchedLoans(farmer.profile),
     loanScore: getLoanScore(farmer.profile),
   });
-});
+}));
 
 app.use(express.static(distDirectory));
 
@@ -628,6 +720,27 @@ app.get(/^(?!\/api).*/, (_req, res, next) => {
   });
 });
 
-app.listen(port, "0.0.0.0", () => {
-  console.log(`FarmSetu app running on http://localhost:${port}`);
+app.use((error, req, res, next) => {
+  if (res.headersSent) {
+    return next(error);
+  }
+
+  const statusCode = Number(error?.statusCode || error?.status || 500);
+  const message = statusCode >= 500
+    ? (error?.message || "Internal server error")
+    : (error?.message || "Request failed");
+
+  if (req.path.startsWith("/api")) {
+    return res.status(statusCode).json({ message });
+  }
+
+  return res.status(statusCode).send(message);
 });
+
+if (!process.env.VERCEL) {
+  app.listen(port, "0.0.0.0", () => {
+    console.log(`FarmSetu app running on http://localhost:${port}`);
+  });
+}
+
+export default app;

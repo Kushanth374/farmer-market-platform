@@ -36,7 +36,25 @@ export async function readJson<T>(input: RequestInfo, init?: RequestInit): Promi
   });
 
   if (!response.ok) {
-    throw new Error(`Request failed with ${response.status}`);
+    let message = `Request failed with ${response.status}`;
+
+    try {
+      const data = await response.clone().json() as { message?: string };
+      if (data?.message) {
+        message = `${data.message} (${response.status})`;
+      }
+    } catch {
+      try {
+        const text = await response.text();
+        if (text) {
+          message = `${text} (${response.status})`;
+        }
+      } catch {
+        // Keep the default message when the response body cannot be read.
+      }
+    }
+
+    throw new Error(message);
   }
 
   return response.json() as Promise<T>;

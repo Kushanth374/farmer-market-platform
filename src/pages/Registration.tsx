@@ -13,7 +13,7 @@ export const Registration: React.FC = () => {
     name: user?.name || '',
     phone: user?.phone || '',
     address: user?.address || '',
-    password: user?.password || '',
+    password: '',
     landSize: user?.landSize || '',
     primaryCrop: user?.primaryCrop || '',
   });
@@ -23,7 +23,7 @@ export const Registration: React.FC = () => {
       name: user?.name || '',
       phone: user?.phone || '',
       address: user?.address || '',
-      password: user?.password || '',
+      password: '',
       landSize: user?.landSize || '',
       primaryCrop: user?.primaryCrop || '',
     });
@@ -38,7 +38,8 @@ export const Registration: React.FC = () => {
       navigate('/market');
     } catch (error) {
       console.error('Failed to save registration:', error);
-      addToast(t('toast.registrationSaveFailed'), 'error');
+      const message = error instanceof Error ? error.message : t('toast.registrationSaveFailed');
+      addToast(message, 'error');
     } finally {
       setIsSaving(false);
     }

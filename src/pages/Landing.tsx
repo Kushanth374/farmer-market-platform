@@ -10,6 +10,13 @@ export const Landing: React.FC = () => {
   const { t } = useTranslations();
   const navigate = useNavigate();
   const [isStartingNow, setIsStartingNow] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return window.innerWidth <= 768;
+  });
   const heroImageUrl =
     'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=2200&q=90';
 
@@ -31,6 +38,13 @@ export const Landing: React.FC = () => {
     return () => window.clearTimeout(timerId);
   }, [isStartingNow, navigate]);
 
+  useEffect(() => {
+    const syncViewport = () => setIsMobile(window.innerWidth <= 768);
+    syncViewport();
+    window.addEventListener('resize', syncViewport);
+    return () => window.removeEventListener('resize', syncViewport);
+  }, []);
+
   if (isStartingNow) {
     return <AppLoader />;
   }
@@ -38,8 +52,8 @@ export const Landing: React.FC = () => {
   return (
     <div className="landing-page-pro">
       <div className="landing-leaf-overlay" aria-hidden="true">
-        <ParticlesLeaves />
-        <ParticlesBubbles />
+        {!isMobile && <ParticlesLeaves />}
+        {!isMobile && <ParticlesBubbles />}
       </div>
       <div className="landing-ambient landing-ambient-one" aria-hidden="true" />
       <div className="landing-ambient landing-ambient-two" aria-hidden="true" />

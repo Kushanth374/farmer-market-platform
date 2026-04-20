@@ -20,6 +20,13 @@ import { ParticlesLeaves } from './components/ParticlesLeaves';
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isBooting, setIsBooting] = useState(true);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return window.innerWidth <= 768;
+  });
   const location = useLocation();
   const { t, language } = useTranslations();
   const { isAdmin } = useAppContext();
@@ -32,6 +39,88 @@ export default function App() {
     const bootTimer = window.setTimeout(() => setIsBooting(false), 1400);
     return () => window.clearTimeout(bootTimer);
   }, []);
+
+  useEffect(() => {
+    const syncViewport = () => {
+      setIsMobile(window.innerWidth <= 768);
+      document.body.classList.toggle('mobile-optimized', window.innerWidth <= 768);
+    };
+
+    syncViewport();
+    window.addEventListener('resize', syncViewport);
+    return () => window.removeEventListener('resize', syncViewport);
+  }, []);
+
+  useEffect(() => {
+    const supportsMotion = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!supportsMotion || isMobile) {
+      return;
+    }
+
+    const clickableSelector = [
+      'button',
+      'a',
+      '[role="button"]',
+      'input[type="button"]',
+      'input[type="submit"]',
+      'input[type="reset"]',
+      'summary',
+      '.click-animate',
+    ].join(', ');
+
+    const cleanupEffect = (effect: HTMLElement, timeout = 900) => {
+      window.setTimeout(() => {
+        effect.remove();
+      }, timeout);
+    };
+
+    const spawnClickBurst = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      const clickable = target.closest(clickableSelector);
+      if (!(clickable instanceof HTMLElement)) {
+        return;
+      }
+
+      clickable.classList.remove('click-press-animate');
+      void clickable.offsetWidth;
+
+      const rect = clickable.getBoundingClientRect();
+      clickable.style.setProperty('--click-x', `${event.clientX - rect.left}px`);
+      clickable.style.setProperty('--click-y', `${event.clientY - rect.top}px`);
+      clickable.classList.add('click-press-animate');
+
+      window.setTimeout(() => {
+        clickable.classList.remove('click-press-animate');
+      }, 520);
+
+      const ripple = document.createElement('span');
+      ripple.className = 'click-target-ripple click-effect-layer';
+      ripple.style.left = `${event.clientX - rect.left}px`;
+      ripple.style.top = `${event.clientY - rect.top}px`;
+      clickable.appendChild(ripple);
+
+      const halo = document.createElement('span');
+      halo.className = 'click-target-halo click-effect-layer';
+      halo.style.left = `${event.clientX - rect.left}px`;
+      halo.style.top = `${event.clientY - rect.top}px`;
+      clickable.appendChild(halo);
+
+      const sweep = document.createElement('span');
+      sweep.className = 'click-target-sheen click-effect-layer';
+      clickable.appendChild(sweep);
+
+      cleanupEffect(ripple, 650);
+      cleanupEffect(halo, 720);
+      cleanupEffect(sweep, 700);
+    };
+
+    document.addEventListener('pointerdown', spawnClickBurst);
+    return () => document.removeEventListener('pointerdown', spawnClickBurst);
+  }, [isMobile]);
 
   const getPageTitle = () => {
     switch (location.pathname) {
@@ -61,7 +150,7 @@ export default function App() {
   const globalNatureBackground = (
     <div className="global-nature-bg" aria-hidden="true">
       <div className="greenery-mist-layer" />
-      {location.pathname !== '/' && <ParticlesLeaves />}
+      {!isMobile && location.pathname !== '/' && <ParticlesLeaves />}
     </div>
   );
 

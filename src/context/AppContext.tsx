@@ -7,9 +7,12 @@ export type User = {
   name: string;
   phone: string;
   address: string;
-  password: string;
   landSize: string;
   primaryCrop: string;
+};
+
+export type RegistrationPayload = User & {
+  password: string;
 };
 
 export type MarketListing = {
@@ -60,7 +63,7 @@ interface AppContextType {
   orders: Order[];
   refreshOrders: () => Promise<Order[] | null>;
   createOrder: (payload: Omit<Order, 'id' | 'createdAt' | 'status'> & { status?: string; createdAt?: string }) => Promise<Order | null>;
-  registerUser: (user: User) => Promise<boolean>;
+  registerUser: (user: RegistrationPayload) => Promise<boolean>;
   accessAccount: (phone: string, password: string) => Promise<'success' | 'invalid_password' | 'not_found'>;
   signOut: () => void;
   adminSignIn: (pin: string) => boolean;
@@ -284,7 +287,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setLanguageState(lang);
   };
 
-  const registerUser = async (nextUser: User) => {
+  const registerUser = async (nextUser: RegistrationPayload) => {
     const normalizedPhone = nextUser.phone.trim();
     const updatedUser = { ...nextUser, phone: normalizedPhone };
     const result = await sendJson<AccountResponse>('/api/accounts/register', {
